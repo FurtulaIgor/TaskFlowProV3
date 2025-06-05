@@ -23,10 +23,10 @@ FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
-CREATE POLICY "allow_admin_all"
+/*CREATE POLICY "allow_admin_all"
 ON user_roles
 FOR ALL
 TO authenticated
 USING (
   (SELECT role FROM user_roles WHERE user_id = auth.uid() LIMIT 1) = 'admin'
-);
+);*/
