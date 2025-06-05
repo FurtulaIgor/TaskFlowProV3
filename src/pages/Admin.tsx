@@ -202,7 +202,7 @@ const Admin: React.FC = () => {
         title="Update User Role"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline\" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleUpdateRole} isLoading={isLoading}>
