@@ -24,7 +24,7 @@ FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
 
-CREATE POLICY "user_roles_admin_all"
+/*CREATE POLICY "user_roles_admin_all"
 ON user_roles
 FOR ALL
 TO authenticated
@@ -36,4 +36,4 @@ USING (
       AND ur.role = 'admin'
       AND ur.id != user_roles.id  -- Prevent self-reference
   )
-);
+);*/
