@@ -43,7 +43,7 @@ const Register: React.FC = () => {
     
     await signUp(email, password);
   };
-
+  
   const getErrorMessage = (error: string) => {
     if (error.includes('User already registered') || error.includes('user_already_exists')) {
       return 'This email is already registered. Please try logging in or use a different email.';
