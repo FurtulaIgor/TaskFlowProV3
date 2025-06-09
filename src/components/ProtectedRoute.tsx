@@ -19,11 +19,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [initialize, hasInitialized]);
   
   if (!hasInitialized || isLoading) {
-    return <LoadingSpinner size="lg" className="min-h-screen" />;
+    return <LoadingSpinner size="lg\" className="min-h-screen" />;
   }
   
   if (!user) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+    return <Navigate to="/auth/login\" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
