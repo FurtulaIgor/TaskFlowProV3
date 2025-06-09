@@ -8,6 +8,7 @@ interface AuthState {
   isAdmin: boolean;
   isLoading: boolean;
   error: string | null;
+  hasInitialized: boolean;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<User | null>;
   signUp: (email: string, password: string) => Promise<User | null>;
@@ -23,10 +24,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAdmin: false,
   isLoading: false,
   error: null,
+  hasInitialized: false,
 
   initialize: async () => {
+    const state = get();
+    if (state.hasInitialized) return;
+    
     try {
       set({ isLoading: true, error: null });
+      
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
 
@@ -39,12 +45,48 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
         
         const isAdmin = roleData?.role === 'admin';
-        set({ user: session.user, session, isAdmin, isLoading: false });
+        set({ 
+          user: session.user, 
+          session, 
+          isAdmin, 
+          isLoading: false, 
+          hasInitialized: true 
+        });
       } else {
-        set({ user: null, session: null, isAdmin: false, isLoading: false });
+        set({ 
+          user: null, 
+          session: null, 
+          isAdmin: false, 
+          isLoading: false, 
+          hasInitialized: true 
+        });
       }
+
+      // Set up auth state change listener
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          set({ user: null, session: null, isAdmin: false });
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .single();
+          
+          const isAdmin = roleData?.role === 'admin';
+          set({ user: session.user, session, isAdmin });
+        }
+      });
+      
     } catch (error: any) {
-      set({ user: null, session: null, isAdmin: false, isLoading: false, error: error.message });
+      set({ 
+        user: null, 
+        session: null, 
+        isAdmin: false, 
+        isLoading: false, 
+        error: error.message, 
+        hasInitialized: true 
+      });
     }
   },
 
@@ -139,7 +181,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   getSession: async () => {
     try {
-      // Don't set loading state here to prevent re-renders
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
 

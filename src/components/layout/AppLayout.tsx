@@ -9,13 +9,15 @@ import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 
 const AppLayout: React.FC = () => {
-  const { user, isAdmin, signOut, initialize, isLoading } = useAuthStore();
+  const { user, isAdmin, signOut, initialize, isLoading, hasInitialized } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    if (!hasInitialized) {
+      initialize();
+    }
+  }, [initialize, hasInitialized]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -35,7 +37,7 @@ const AppLayout: React.FC = () => {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  if (isLoading) {
+  if (!hasInitialized || isLoading) {
     return <LoadingSpinner size="lg" className="min-h-screen" />;
   }
 
