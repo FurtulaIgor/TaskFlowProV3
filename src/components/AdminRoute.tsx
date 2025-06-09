@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
@@ -18,6 +17,7 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     queryFn: getSession,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    refetchOnWindowFocus: false,
   });
   
   const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
@@ -37,6 +37,7 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    refetchOnWindowFocus: false,
   });
   
   if (isUserLoading || isAdminLoading) {
@@ -52,4 +53,4 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   }
   
   return <>{children}</>;
-}; 
+};

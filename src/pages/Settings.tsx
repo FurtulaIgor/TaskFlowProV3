@@ -3,11 +3,8 @@ import { Settings as SettingsIcon, UserCog, Clock, DollarSign } from 'lucide-rea
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import Select from '../components/ui/Select';
 import { useServicesStore, Service } from '../store/useServicesStore';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
 
 const Settings: React.FC = () => {
   const { services, fetchServices, addService, updateService, deleteService, isLoading, error } = useServicesStore();
@@ -183,7 +180,7 @@ const Settings: React.FC = () => {
               </div>
               
               <div className="flex space-x-3">
-                <Button type="submit" isLoading={isLoading}>
+                <Button type="submit" loading={isLoading}>
                   {isEditingService ? 'Update Service' : 'Add Service'}
                 </Button>
                 
@@ -248,7 +245,7 @@ const Settings: React.FC = () => {
                           </Button>
                           <Button
                             size="sm"
-                            variant="danger"
+                            variant="destructive"
                             onClick={() => handleDeleteService(service.id)}
                           >
                             Delete

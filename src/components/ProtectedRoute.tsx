@@ -15,11 +15,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { getSession } = useAuthStore();
   const queryClient = useQueryClient();
   
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery({
     queryKey: ['session'],
     queryFn: getSession,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
   
   useEffect(() => {
@@ -27,6 +29,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'SIGNED_OUT') {
         queryClient.setQueryData(['session'], null);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        queryClient.setQueryData(['session'], session.user);
       }
     });
     
@@ -39,9 +43,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <LoadingSpinner size="lg" className="min-h-screen" />;
   }
   
-  if (!user) {
+  if (error || !user) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
-}; 
+};
