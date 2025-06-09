@@ -41,11 +41,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [queryClient]);
   
   if (isLoading) {
-    return <LoadingSpinner size="lg" className="min-h-screen" />;
+    return <LoadingSpinner size="lg\" className="min-h-screen" />;
   }
   
   if (error || !user) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+    return <Navigate to="/auth/login\" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
