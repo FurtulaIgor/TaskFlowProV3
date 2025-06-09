@@ -8,15 +8,15 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from './components/auth/AuthProvider';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
-// Create a client with better defaults
+// Create a client with better defaults to prevent infinite loops
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
+      retry: false, // Disable retries to prevent loops
       refetchOnWindowFocus: false,
-      refetchOnMount: true,
-      refetchOnReconnect: true,
+      refetchOnMount: false, // Only fetch when explicitly needed
+      refetchOnReconnect: false,
     },
   },
 });
