@@ -7,15 +7,15 @@ export interface Service {
   user_id: string;
   name: string;
   description: string | null;
-  duration: number;
   price: number;
+  duration: number;
 }
 
 interface ServicesState {
   services: Service[];
   isLoading: boolean;
   error: string | null;
-  fetchServices: () => Promise<void>;
+  fetchServices: () => Promise<Service[]>;
   getService: (id: string) => Service | undefined;
   addService: (service: Omit<Service, 'id' | 'created_at' | 'user_id'>) => Promise<Service | null>;
   updateService: (id: string, service: Partial<Service>) => Promise<Service | null>;
@@ -38,9 +38,12 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       
       if (error) throw error;
       
-      set({ services: data as Service[], isLoading: false });
+      const services = data as Service[];
+      set({ services, isLoading: false });
+      return services;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
   
@@ -52,55 +55,56 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('User not authenticated');
-      
       const { data, error } = await supabase
         .from('services')
-        .insert([{ ...service, user_id: userData.user.id }])
+        .insert(service)
         .select()
         .single();
       
       if (error) throw error;
       
+      const newService = data as Service;
       set(state => ({ 
-        services: [...state.services, data as Service],
+        services: [...state.services, newService],
         isLoading: false 
       }));
       
-      return data as Service;
+      return newService;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  updateService: async (id: string, serviceData) => {
+  updateService: async (id, service) => {
     try {
       set({ isLoading: true, error: null });
       
       const { data, error } = await supabase
         .from('services')
-        .update(serviceData)
+        .update(service)
         .eq('id', id)
         .select()
         .single();
       
       if (error) throw error;
       
+      const updatedService = data as Service;
       set(state => ({
-        services: state.services.map(s => s.id === id ? { ...s, ...data } as Service : s),
+        services: state.services.map(s => 
+          s.id === id ? updatedService : s
+        ),
         isLoading: false
       }));
       
-      return data as Service;
+      return updatedService;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  deleteService: async (id: string) => {
+  deleteService: async (id) => {
     try {
       set({ isLoading: true, error: null });
       

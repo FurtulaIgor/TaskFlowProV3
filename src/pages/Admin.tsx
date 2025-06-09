@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAdminStore } from '../store/useAdminStore';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
+import { Button } from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';

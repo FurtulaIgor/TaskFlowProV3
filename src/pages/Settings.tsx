@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Settings as SettingsIcon, UserCog, Clock, DollarSign } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import { Button } from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import { useServicesStore, Service } from '../store/useServicesStore';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 
 const Settings: React.FC = () => {
   const { services, fetchServices, addService, updateService, deleteService, isLoading, error } = useServicesStore();

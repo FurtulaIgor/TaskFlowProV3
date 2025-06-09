@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 
 interface ProtectedRouteProps {
@@ -7,12 +7,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loadUser, isLoading } = useAuthStore();
-  
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-  
+  const { user, isLoading } = useAuthStore();
+  const location = useLocation();
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -20,11 +17,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       </div>
     );
   }
-  
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
-  
+
   return <>{children}</>;
 };
 

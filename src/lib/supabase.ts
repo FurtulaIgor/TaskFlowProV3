@@ -16,6 +16,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true
   },
+  db: {
+    schema: 'public'
+  },
   global: {
     headers: {
       'X-Client-Info': 'supabase-js-web'
@@ -24,9 +27,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 });
 
 // Add error event listener
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange((event, _session) => {
   if (event === 'SIGNED_OUT') {
     // Clear any cached data when user signs out
-    supabase.auth.refreshSession();
+    // supabase.auth.refreshSession();
   }
 });

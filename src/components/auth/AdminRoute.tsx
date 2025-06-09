@@ -6,7 +6,7 @@ interface AdminRouteProps {
   children: React.ReactNode;
 }
 
-const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
+const AdminRoute: React.FC<AdminRouteProps> = ({ children }: AdminRouteProps) => {
   const { user, isAdmin, loadUser, isLoading } = useAuthStore();
   
   useEffect(() => {
@@ -22,11 +22,11 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   }
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
   
   if (!isAdmin) {
-    return <Navigate to="/\" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
   
   return <>{children}</>;

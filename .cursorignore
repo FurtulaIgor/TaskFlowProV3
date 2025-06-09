@@ -1,0 +1,19 @@
+# Ignoriši node_modules i build artefakte
+node_modules
+dist
+build
+out
+
+# Ignoriši lock fajlove
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignoriši git folder
+.git
+
+# Ignoriši IDE konfiguracije
+.vscode
+.idea
+
+# (Nema linije sa .env, tako da .env NIJE ignorisan)

@@ -13,6 +13,7 @@ export interface Invoice {
   due_date: string | null;
   paid_date: string | null;
   pdf_url: string | null;
+  notes: string | null;
   client?: {
     name: string;
     email: string;
@@ -23,7 +24,7 @@ interface InvoicesState {
   invoices: Invoice[];
   isLoading: boolean;
   error: string | null;
-  fetchInvoices: () => Promise<void>;
+  fetchInvoices: () => Promise<Invoice[]>;
   getInvoice: (id: string) => Invoice | undefined;
   addInvoice: (invoice: Omit<Invoice, 'id' | 'created_at' | 'user_id' | 'pdf_url' | 'client'>) => Promise<Invoice | null>;
   updateInvoice: (id: string, invoice: Partial<Invoice>) => Promise<Invoice | null>;
@@ -51,9 +52,12 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
       
       if (error) throw error;
       
-      set({ invoices: data as Invoice[], isLoading: false });
+      const invoices = data as Invoice[];
+      set({ invoices, isLoading: false });
+      return invoices;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      return []; // Return empty array instead of undefined
     }
   },
   
@@ -65,12 +69,9 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('User not authenticated');
-      
       const { data, error } = await supabase
         .from('invoices')
-        .insert([{ ...invoice, user_id: userData.user.id, status: invoice.status || 'pending' }])
+        .insert(invoice)
         .select(`
           *,
           client:clients(name, email)
@@ -80,32 +81,6 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
       if (error) throw error;
       
       const newInvoice = data as Invoice;
-      
-      // Generate PDF
-      const pdfUrl = await get().generatePdf(newInvoice);
-      
-      if (pdfUrl) {
-        // Update invoice with PDF URL
-        const { data: updatedInvoice, error: updateError } = await supabase
-          .from('invoices')
-          .update({ pdf_url: pdfUrl })
-          .eq('id', newInvoice.id)
-          .select(`
-            *,
-            client:clients(name, email)
-          `)
-          .single();
-        
-        if (!updateError && updatedInvoice) {
-          set(state => ({ 
-            invoices: [...state.invoices, updatedInvoice as Invoice],
-            isLoading: false 
-          }));
-          
-          return updatedInvoice as Invoice;
-        }
-      }
-      
       set(state => ({ 
         invoices: [...state.invoices, newInvoice],
         isLoading: false 
@@ -118,13 +93,13 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
     }
   },
   
-  updateInvoice: async (id: string, invoiceData) => {
+  updateInvoice: async (id, invoice) => {
     try {
       set({ isLoading: true, error: null });
       
       const { data, error } = await supabase
         .from('invoices')
-        .update(invoiceData)
+        .update(invoice)
         .eq('id', id)
         .select(`
           *,
@@ -134,19 +109,22 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
       
       if (error) throw error;
       
+      const updatedInvoice = data as Invoice;
       set(state => ({
-        invoices: state.invoices.map(i => i.id === id ? { ...i, ...data } as Invoice : i),
+        invoices: state.invoices.map(i => 
+          i.id === id ? updatedInvoice : i
+        ),
         isLoading: false
       }));
       
-      return data as Invoice;
+      return updatedInvoice;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  deleteInvoice: async (id: string) => {
+  deleteInvoice: async (id) => {
     try {
       set({ isLoading: true, error: null });
       

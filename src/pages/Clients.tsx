@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users, UserPlus, Edit, Trash2, Search } from 'lucide-react';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
+import { Button } from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import { useClientsStore, Client } from '../store/useClientsStore';

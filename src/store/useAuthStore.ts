@@ -1,118 +1,129 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
+  session: Session | null;
   isAdmin: boolean;
   isLoading: boolean;
   error: string | null;
-  session: any | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  initialize: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<User | null>;
+  signUp: (email: string, password: string) => Promise<User | null>;
   signOut: () => Promise<void>;
-  loadUser: () => Promise<void>;
-  checkAdmin: (userId: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  getSession: () => Promise<User | null>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  isAdmin: false,
-  isLoading: true,
-  error: null,
   session: null,
-  
-  signIn: async (email: string, password: string) => {
+  isAdmin: false,
+  isLoading: false,
+  error: null,
+
+  initialize: async () => {
+    set({ isLoading: true, error: null });
     try {
-      set({ isLoading: true, error: null });
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
+      const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
-      
-      set({ 
-        user: data.user,
-        session: data.session,
-        isLoading: false 
-      });
-      
-      if (data.user) {
-        const isAdmin = await get().checkAdmin(data.user.id);
-        set({ isAdmin });
+
+      if (session) {
+        const isAdmin = session.user?.email === 'admin@mojadomena.com';
+        set({ user: session.user, session, isAdmin, isLoading: false });
+      } else {
+        set({ user: null, session: null, isAdmin: false, isLoading: false });
       }
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      set({ user: null, session: null, isAdmin: false, isLoading: false, error: error.message });
     }
   },
-  
-  signUp: async (email: string, password: string) => {
+
+  signIn: async (email, password) => {
     try {
       set({ isLoading: true, error: null });
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      
-      set({ 
-        user: data.user,
-        session: data.session,
-        isLoading: false,
-        isAdmin: false
-      });
+
+      const isAdmin = data.user?.email === 'admin@mojadomena.com';
+      set({ user: data.user, session: data.session, isAdmin, isLoading: false });
+      return data.user;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      return null;
     }
   },
-  
+
+  signUp: async (email, password) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+
+      const isAdmin = data.user?.email === 'admin@mojadomena.com';
+      set({ user: data.user, session: data.session, isAdmin, isLoading: false });
+      return data.user;
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
   signOut: async () => {
     try {
       set({ isLoading: true, error: null });
       const { error } = await supabase.auth.signOut();
-      
       if (error) throw error;
-      
+
       set({ user: null, session: null, isAdmin: false, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
   },
-  
-  loadUser: async () => {
+
+  resetPassword: async (email) => {
     try {
       set({ isLoading: true, error: null });
-      const { data: { user, session } } = await supabase.auth.getUser();
-      
-      set({ 
-        user,
-        session,
-        isLoading: false
-      });
-      
-      if (user) {
-        const isAdmin = await get().checkAdmin(user.id);
-        set({ isAdmin });
-      }
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+
+      set({ isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
   },
-  
-  checkAdmin: async (userId: string) => {
+
+  updatePassword: async (password) => {
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-      
-      if (error) return false;
-      return data?.role === 'admin';
-    } catch (error) {
-      return false;
+      set({ isLoading: true, error: null });
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+
+      set({ isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  getSession: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+
+      if (session) {
+        const isAdmin = session.user?.email === 'admin@mojadomena.com';
+        set({ user: session.user, session, isAdmin, isLoading: false });
+        return session.user;
+      } else {
+        set({ user: null, session: null, isAdmin: false, isLoading: false });
+        return null;
+      }
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      return null;
     }
   }
 }));

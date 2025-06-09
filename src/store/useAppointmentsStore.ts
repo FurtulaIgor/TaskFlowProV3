@@ -27,7 +27,7 @@ interface AppointmentsState {
   appointments: Appointment[];
   isLoading: boolean;
   error: string | null;
-  fetchAppointments: (startDate?: Date, endDate?: Date) => Promise<void>;
+  fetchAppointments: (startDate?: Date, endDate?: Date) => Promise<Appointment[]>;
   getAppointment: (id: string) => Appointment | undefined;
   addAppointment: (appointment: Omit<Appointment, 'id' | 'created_at' | 'user_id' | 'client' | 'service'>) => Promise<Appointment | null>;
   updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<Appointment | null>;
@@ -67,9 +67,12 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       
       if (error) throw error;
       
-      set({ appointments: data as Appointment[], isLoading: false });
+      const appointments = data as Appointment[];
+      set({ appointments, isLoading: false });
+      return appointments;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
   
@@ -79,19 +82,11 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   
   addAppointment: async (appointment) => {
     try {
-      // Check if time slot is available
-      if (!get().isTimeSlotAvailable(appointment.start_time, appointment.end_time)) {
-        throw new Error('This time slot is already booked');
-      }
-      
       set({ isLoading: true, error: null });
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('User not authenticated');
       
       const { data, error } = await supabase
         .from('appointments')
-        .insert([{ ...appointment, user_id: userData.user.id }])
+        .insert(appointment)
         .select(`
           *,
           client:clients(name, email, phone),
@@ -101,32 +96,26 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       
       if (error) throw error;
       
+      const newAppointment = data as Appointment;
       set(state => ({ 
-        appointments: [...state.appointments, data as Appointment],
+        appointments: [...state.appointments, newAppointment],
         isLoading: false 
       }));
       
-      return data as Appointment;
+      return newAppointment;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  updateAppointment: async (id: string, appointmentData) => {
+  updateAppointment: async (id, appointment) => {
     try {
-      // Check if new time slot is available
-      if (appointmentData.start_time && appointmentData.end_time) {
-        if (!get().isTimeSlotAvailable(appointmentData.start_time, appointmentData.end_time, id)) {
-          throw new Error('This time slot is already booked');
-        }
-      }
-      
       set({ isLoading: true, error: null });
       
       const { data, error } = await supabase
         .from('appointments')
-        .update(appointmentData)
+        .update(appointment)
         .eq('id', id)
         .select(`
           *,
@@ -137,19 +126,22 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       
       if (error) throw error;
       
+      const updatedAppointment = data as Appointment;
       set(state => ({
-        appointments: state.appointments.map(a => a.id === id ? { ...a, ...data } as Appointment : a),
+        appointments: state.appointments.map(a => 
+          a.id === id ? updatedAppointment : a
+        ),
         isLoading: false
       }));
       
-      return data as Appointment;
+      return updatedAppointment;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  deleteAppointment: async (id: string) => {
+  deleteAppointment: async (id) => {
     try {
       set({ isLoading: true, error: null });
       
@@ -172,20 +164,20 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     }
   },
   
-  isTimeSlotAvailable: (startTime: string, endTime: string, excludeId?: string) => {
+  isTimeSlotAvailable: (startTime, endTime, excludeId) => {
     const appointments = get().appointments;
-    
-    // Exclude the current appointment if we're updating
-    const relevantAppointments = excludeId 
-      ? appointments.filter(a => a.id !== excludeId)
-      : appointments;
-    
-    // Check for conflicts
-    return !relevantAppointments.some(a => {
+    return !appointments.some(appointment => {
+      if (excludeId && appointment.id === excludeId) return false;
+      
+      const appointmentStart = new Date(appointment.start_time);
+      const appointmentEnd = new Date(appointment.end_time);
+      const newStart = new Date(startTime);
+      const newEnd = new Date(endTime);
+      
       return (
-        (startTime >= a.start_time && startTime < a.end_time) ||
-        (endTime > a.start_time && endTime <= a.end_time) ||
-        (startTime <= a.start_time && endTime >= a.end_time)
+        (newStart >= appointmentStart && newStart < appointmentEnd) ||
+        (newEnd > appointmentStart && newEnd <= appointmentEnd) ||
+        (newStart <= appointmentStart && newEnd >= appointmentEnd)
       );
     });
   }

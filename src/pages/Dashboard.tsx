@@ -14,11 +14,13 @@ import {
   Legend,
 } from 'chart.js';
 import { Calendar, Users, FileText, DollarSign } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { useAppointmentsStore } from '../store/useAppointmentsStore';
-import { useClientsStore } from '../store/useClientsStore';
-import { useInvoicesStore } from '../store/useInvoicesStore';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useAppointmentsStore, Appointment } from '@/store/useAppointmentsStore';
+import { useClientsStore, Client } from '@/store/useClientsStore';
+import { useInvoicesStore, Invoice } from '@/store/useInvoicesStore';
 
 // Register ChartJS components
 ChartJS.register(
@@ -33,9 +35,9 @@ ChartJS.register(
 );
 
 const Dashboard: React.FC = () => {
-  const { appointments, fetchAppointments } = useAppointmentsStore();
-  const { clients, fetchClients } = useClientsStore();
-  const { invoices, fetchInvoices } = useInvoicesStore();
+  const { fetchAppointments } = useAppointmentsStore();
+  const { fetchClients } = useClientsStore();
+  const { fetchInvoices } = useInvoicesStore();
   const navigate = useNavigate();
   
   const [todayAppointments, setTodayAppointments] = useState(0);
@@ -43,18 +45,31 @@ const Dashboard: React.FC = () => {
   const [revenueToday, setRevenueToday] = useState(0);
   const [pendingInvoices, setPendingInvoices] = useState(0);
   
-  useEffect(() => {
-    fetchAppointments();
-    fetchClients();
-    fetchInvoices();
-  }, [fetchAppointments, fetchClients, fetchInvoices]);
+  // Use React Query for data fetching
+  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery<Appointment[]>({
+    queryKey: ['appointments'],
+    queryFn: () => fetchAppointments(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery<Client[]>({
+    queryKey: ['clients'],
+    queryFn: () => fetchClients(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  const { data: invoices = [], isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
+    queryKey: ['invoices'],
+    queryFn: () => fetchInvoices(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   
   useEffect(() => {
     // Count today's appointments
     const today = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
     
-    const todayAppts = appointments.filter(appt => 
+    const todayAppts = appointments.filter((appt: Appointment) => 
       appt.start_time.includes(todayStr)
     ).length;
     
@@ -64,15 +79,15 @@ const Dashboard: React.FC = () => {
     setTotalClients(clients.length);
     
     // Calculate revenue for today
-    const todayInvoices = invoices.filter(inv => 
+    const todayInvoices = invoices.filter((inv: Invoice) => 
       inv.created_at.includes(todayStr) && inv.status === 'paid'
     );
     
-    const todayRevenue = todayInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const todayRevenue = todayInvoices.reduce((sum: number, inv: Invoice) => sum + inv.amount, 0);
     setRevenueToday(todayRevenue);
     
     // Count pending invoices
-    const pending = invoices.filter(inv => inv.status === 'pending').length;
+    const pending = invoices.filter((inv: Invoice) => inv.status === 'pending').length;
     setPendingInvoices(pending);
     
   }, [appointments, clients, invoices]);
@@ -91,8 +106,8 @@ const Dashboard: React.FC = () => {
         label: 'Revenue',
         data: last7Days.map(date => {
           return invoices
-            .filter(inv => inv.created_at.includes(date) && inv.status === 'paid')
-            .reduce((sum, inv) => sum + inv.amount, 0);
+            .filter((inv: Invoice) => inv.created_at.includes(date) && inv.status === 'paid')
+            .reduce((sum: number, inv: Invoice) => sum + inv.amount, 0);
         }),
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
@@ -107,7 +122,7 @@ const Dashboard: React.FC = () => {
       {
         label: 'Appointments',
         data: last7Days.map(date => {
-          return appointments.filter(appt => appt.start_time.includes(date)).length;
+          return appointments.filter((appt: Appointment) => appt.start_time.includes(date)).length;
         }),
         backgroundColor: 'rgba(20, 184, 166, 0.7)',
         borderWidth: 0,
@@ -116,198 +131,167 @@ const Dashboard: React.FC = () => {
     ],
   };
   
+  const isLoading = isLoadingAppointments || isLoadingClients || isLoadingInvoices;
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+  
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Overview of your business activities
+          Pregled poslovanja
         </p>
       </div>
       
       {/* Stats cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card className="border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Today's Appointments</p>
-              <p className="text-2xl font-semibold">{todayAppointments}</p>
+        <Card>
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Današnji termini</p>
+                <p className="text-2xl font-semibold">{todayAppointments}</p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Calendar className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <Calendar className="h-6 w-6 text-blue-600" />
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate('/appointments')}
+              >
+                Pogledaj termine
+              </Button>
             </div>
-          </div>
-          <div className="mt-4">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => navigate('/appointments')}
-            >
-              View appointments
-            </Button>
-          </div>
+          </CardContent>
         </Card>
         
-        <Card className="border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Clients</p>
-              <p className="text-2xl font-semibold">{totalClients}</p>
+        <Card>
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Ukupno klijenata</p>
+                <p className="text-2xl font-semibold">{totalClients}</p>
+              </div>
+              <div className="bg-teal-100 p-3 rounded-full">
+                <Users className="h-6 w-6 text-teal-600" />
+              </div>
             </div>
-            <div className="bg-teal-100 p-3 rounded-full">
-              <Users className="h-6 w-6 text-teal-600" />
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate('/clients')}
+              >
+                Upravljaj klijentima
+              </Button>
             </div>
-          </div>
-          <div className="mt-4">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => navigate('/clients')}
-            >
-              Manage clients
-            </Button>
-          </div>
+          </CardContent>
         </Card>
         
-        <Card className="border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Revenue Today</p>
-              <p className="text-2xl font-semibold">${revenueToday.toFixed(2)}</p>
+        <Card>
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Današnji prihod</p>
+                <p className="text-2xl font-semibold">${revenueToday.toFixed(2)}</p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-full">
+                <DollarSign className="h-6 w-6 text-green-600" />
+              </div>
             </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <DollarSign className="h-6 w-6 text-green-600" />
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate('/invoices')}
+              >
+                Pogledaj fakture
+              </Button>
             </div>
-          </div>
-          <div className="mt-4">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => navigate('/invoices')}
-            >
-              View revenue
-            </Button>
-          </div>
+          </CardContent>
         </Card>
         
-        <Card className="border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Pending Invoices</p>
-              <p className="text-2xl font-semibold">{pendingInvoices}</p>
+        <Card>
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Na čekanju</p>
+                <p className="text-2xl font-semibold">{pendingInvoices}</p>
+              </div>
+              <div className="bg-orange-100 p-3 rounded-full">
+                <FileText className="h-6 w-6 text-orange-600" />
+              </div>
             </div>
-            <div className="bg-orange-100 p-3 rounded-full">
-              <FileText className="h-6 w-6 text-orange-600" />
+            <div className="mt-4">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate('/invoices')}
+              >
+                Upravljaj fakturama
+              </Button>
             </div>
-          </div>
-          <div className="mt-4">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => navigate('/invoices')}
-            >
-              Manage invoices
-            </Button>
-          </div>
+          </CardContent>
         </Card>
       </div>
       
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card title="Weekly Revenue">
-          <div className="h-64">
-            <Line 
-              data={revenueData} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      callback: function(value) {
-                        return '$' + value;
-                      }
-                    }
-                  }
-                }
-              }}
-            />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Prihod (poslednjih 7 dana)</h3>
+          </CardHeader>
+          <CardContent>
+            <Line data={revenueData} options={{
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                },
+              },
+            }} />
+          </CardContent>
         </Card>
         
-        <Card title="Weekly Appointments">
-          <div className="h-64">
-            <Bar 
-              data={appointmentData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      precision: 0
-                    }
-                  }
-                }
-              }}
-            />
-          </div>
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Termini (poslednjih 7 dana)</h3>
+          </CardHeader>
+          <CardContent>
+            <Bar data={appointmentData} options={{
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                  },
+                },
+              },
+            }} />
+          </CardContent>
         </Card>
       </div>
-      
-      {/* Upcoming appointments */}
-      <Card title="Today's Appointments">
-        <div className="overflow-hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {appointments
-                .filter(appt => appt.start_time.includes(format(new Date(), 'yyyy-MM-dd')))
-                .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-                .map((appointment) => (
-                  <tr key={appointment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {format(new Date(appointment.start_time), 'h:mm a')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {appointment.client?.name || 'Unknown Client'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {appointment.service?.name || 'Unknown Service'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        appointment.status === 'confirmed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : appointment.status === 'cancelled'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              {appointments.filter(appt => appt.start_time.includes(format(new Date(), 'yyyy-MM-dd'))).length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No appointments scheduled for today
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   );
 };

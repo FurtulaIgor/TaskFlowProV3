@@ -3,20 +3,19 @@ import { supabase } from '../lib/supabase';
 
 export interface Client {
   id: string;
+  created_at: string;
+  user_id: string;
   name: string;
   email: string;
   phone: string;
   notes: string | null;
-  last_interaction: string | null;
-  created_at: string;
-  user_id: string;
 }
 
 interface ClientsState {
   clients: Client[];
   isLoading: boolean;
   error: string | null;
-  fetchClients: () => Promise<void>;
+  fetchClients: () => Promise<Client[]>;
   getClient: (id: string) => Client | undefined;
   addClient: (client: Omit<Client, 'id' | 'created_at' | 'user_id'>) => Promise<Client | null>;
   updateClient: (id: string, client: Partial<Client>) => Promise<Client | null>;
@@ -39,9 +38,12 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
       
       if (error) throw error;
       
-      set({ clients: data as Client[], isLoading: false });
+      const clients = data as Client[];
+      set({ clients, isLoading: false });
+      return clients;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
   
@@ -53,55 +55,56 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('User not authenticated');
-      
       const { data, error } = await supabase
         .from('clients')
-        .insert([{ ...client, user_id: userData.user.id }])
+        .insert(client)
         .select()
         .single();
       
       if (error) throw error;
       
+      const newClient = data as Client;
       set(state => ({ 
-        clients: [...state.clients, data as Client],
+        clients: [...state.clients, newClient],
         isLoading: false 
       }));
       
-      return data as Client;
+      return newClient;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  updateClient: async (id: string, clientData) => {
+  updateClient: async (id, client) => {
     try {
       set({ isLoading: true, error: null });
       
       const { data, error } = await supabase
         .from('clients')
-        .update(clientData)
+        .update(client)
         .eq('id', id)
         .select()
         .single();
       
       if (error) throw error;
       
+      const updatedClient = data as Client;
       set(state => ({
-        clients: state.clients.map(c => c.id === id ? { ...c, ...data } as Client : c),
+        clients: state.clients.map(c => 
+          c.id === id ? updatedClient : c
+        ),
         isLoading: false
       }));
       
-      return data as Client;
+      return updatedClient;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       return null;
     }
   },
   
-  deleteClient: async (id: string) => {
+  deleteClient: async (id) => {
     try {
       set({ isLoading: true, error: null });
       
