@@ -16,8 +16,10 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     queryKey: ['session'],
     queryFn: getSession,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: false,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
   
   const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
@@ -36,20 +38,20 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: false,
     refetchOnWindowFocus: false,
   });
   
   if (isUserLoading || isAdminLoading) {
-    return <LoadingSpinner size="lg\" className="min-h-screen" />;
+    return <LoadingSpinner size="lg" className="min-h-screen" />;
   }
   
   if (!user) {
-    return <Navigate to="/auth/login\" state={{ from: location }} replace />;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
   
   if (!isAdmin) {
-    return <Navigate to="/\" replace />;
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;

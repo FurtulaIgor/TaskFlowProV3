@@ -19,9 +19,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     queryKey: ['session'],
     queryFn: getSession,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: false, // Don't retry on error to prevent loops
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
+    refetchOnMount: false, // Only fetch once
+    refetchOnReconnect: false,
   });
   
   useEffect(() => {
@@ -40,11 +41,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [queryClient]);
   
   if (isLoading) {
-    return <LoadingSpinner size="lg\" className="min-h-screen" />;
+    return <LoadingSpinner size="lg" className="min-h-screen" />;
   }
   
   if (error || !user) {
-    return <Navigate to="/auth/login\" state={{ from: location }} replace />;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;

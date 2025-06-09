@@ -139,6 +139,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   getSession: async () => {
     try {
+      // Don't set loading state here to prevent re-renders
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
 
@@ -151,10 +152,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
         
         const isAdmin = roleData?.role === 'admin';
-        set({ user: session.user, session, isAdmin });
+        
+        // Only update state if it's different
+        const currentState = get();
+        if (currentState.user?.id !== session.user.id || currentState.isAdmin !== isAdmin) {
+          set({ user: session.user, session, isAdmin });
+        }
+        
         return session.user;
       } else {
-        set({ user: null, session: null, isAdmin: false });
+        // Only update state if it's different
+        const currentState = get();
+        if (currentState.user !== null) {
+          set({ user: null, session: null, isAdmin: false });
+        }
         return null;
       }
     } catch (error: any) {
