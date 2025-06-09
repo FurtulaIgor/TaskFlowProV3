@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Input } from '@/components/ui/Input';
@@ -15,11 +15,7 @@ const Register: React.FC = () => {
   const { signUp, user, isLoading } = useAuthStore();
   const navigate = useNavigate();
   
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
+  // Redirect is now handled by ProtectedRoute, no need for manual redirect
   
   const validateForm = () => {
     if (password !== confirmPassword) {

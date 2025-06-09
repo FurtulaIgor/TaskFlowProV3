@@ -5,8 +5,8 @@ import AuthLayout from './components/auth/AuthLayout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminRoute } from './components/AdminRoute';
+import { ProtectedRoute } from './components/routing/ProtectedRoute';
+import { AdminRoute } from './components/routing/AdminRoute';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 
 const Appointments = lazy(() => import('./pages/Appointments'));

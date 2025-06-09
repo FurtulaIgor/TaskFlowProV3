@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -8,25 +9,29 @@ import { toast } from 'sonner';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { user, signIn, isLoading } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { signIn, isLoading } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const user = await signIn(email, password);
+      console.log('Login result:', user); // Debug log
       if (user) {
         toast.success('Uspešno ste se prijavili');
-        navigate('/');
+        // Invalidate the session cache so ProtectedRoute sees the updated state
+        queryClient.invalidateQueries({ queryKey: ['session'] });
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          navigate('/');
+        }, 100);
+      } else {
+        toast.error('Neispravni podaci za prijavu');
       }
     } catch (error: any) {
+      console.error('Login error:', error); // Debug log
       toast.error(error.message || 'Došlo je do greške prilikom prijave');
     }
   };

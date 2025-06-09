@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import {
   Calendar, Users, FileText, BarChart2,
@@ -9,18 +9,16 @@ import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 
 const AppLayout: React.FC = () => {
-  const { user, isAdmin, signOut, initialize, isLoading } = useAuthStore();
+  const { user, checkRole, signOut, isLoading } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth/login');
   };
+
+  const isAdmin = checkRole('admin');
 
   const navigation = [
     { name: 'Dashboard', to: '/', icon: BarChart2 },

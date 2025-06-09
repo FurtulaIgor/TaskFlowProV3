@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 import { Toaster } from 'sonner';
+import { AuthProvider } from './components/auth/AuthProvider';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Create a client with better defaults
 const queryClient = new QueryClient({
@@ -34,11 +36,15 @@ if (!rootElement) throw new Error('Failed to find the root element');
 // Create root and render
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter {...router}>
-        <App />
-        <Toaster position="top-right" richColors />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter {...router}>
+          <AuthProvider>
+            <App />
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
