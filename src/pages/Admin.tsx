@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAdminStore } from '../store/useAdminStore';
-import Card from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
@@ -202,7 +202,7 @@ const Admin: React.FC = () => {
         title="Update User Role"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="outline\" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleUpdateRole} isLoading={isLoading}>

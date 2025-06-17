@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { format, addDays, startOfWeek, addMinutes } from 'date-fns';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Edit } from 'lucide-react';
-import Card from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
-import Input from '../components/ui/Input';
+import { Input } from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { useAppointmentsStore } from '../store/useAppointmentsStore';
 import { useClientsStore } from '../store/useClientsStore';
@@ -279,7 +279,7 @@ const Appointments: React.FC = () => {
         title={isEditMode ? 'Edit Appointment' : 'New Appointment'}
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="outline\" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleSubmit} isLoading={isLoading}>
