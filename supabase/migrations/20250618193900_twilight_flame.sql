@@ -11,8 +11,6 @@
     - Add proper RLS policies for clients table
 */
 
--- Fix clients table column names
-ALTER TABLE clients RENAME COLUMN full_name TO name;
 
 -- Fix user_roles RLS policies
 ALTER TABLE user_roles DISABLE ROW LEVEL SECURITY;
