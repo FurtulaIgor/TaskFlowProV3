@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, Plus, Download, Search, DollarSign } from 'lucide-react';
-import Card from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import Input from '../components/ui/Input';
+import { Input } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
@@ -288,10 +288,10 @@ const Invoices: React.FC = () => {
         title="Create New Invoice"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="outline\" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} isLoading={isLoading}>
+            <Button onClick={handleSubmit} loading={isLoading}>
               Create Invoice
             </Button>
           </div>

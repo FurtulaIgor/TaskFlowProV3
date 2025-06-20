@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Settings as SettingsIcon, UserCog, Clock, DollarSign } from 'lucide-react';
-import Card from '../components/ui/Card';
-import Input from '../components/ui/Input';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useServicesStore, Service } from '../store/useServicesStore';
 import { toast } from 'sonner';
@@ -118,239 +118,248 @@ const Settings: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card title="Services" className="col-span-2">
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {isEditingService ? 'Edit Service' : 'Add New Service'}
-            </h3>
-            
-            <form onSubmit={handleSubmitService} className="space-y-4">
-              <Input
-                label="Service Name"
-                name="name"
-                value={serviceFormData.name}
-                onChange={handleServiceInputChange}
-                placeholder="e.g., Haircut, Consultation, Therapy Session"
-                required
-              />
+        <Card className="col-span-2">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-6">Services</h3>
+            <div className="mb-6">
+              <h4 className="text-md font-medium text-gray-900 mb-4">
+                {isEditingService ? 'Edit Service' : 'Add New Service'}
+              </h4>
               
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={3}
-                  className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  value={serviceFormData.description}
+              <form onSubmit={handleSubmitService} className="space-y-4">
+                <Input
+                  label="Service Name"
+                  name="name"
+                  value={serviceFormData.name}
                   onChange={handleServiceInputChange}
-                  placeholder="Describe the service in detail"
+                  placeholder="e.g., Haircut, Consultation, Therapy Session"
+                  required
                 />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-gray-400 mr-2" />
-                  <Input
-                    label="Duration (minutes)"
-                    name="duration"
-                    type="number"
-                    min="15"
-                    step="15"
-                    value={serviceFormData.duration.toString()}
+                
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                    value={serviceFormData.description}
                     onChange={handleServiceInputChange}
-                    required
+                    placeholder="Describe the service in detail"
                   />
                 </div>
                 
-                <div className="flex items-center">
-                  <DollarSign className="h-5 w-5 text-gray-400 mr-2" />
-                  <Input
-                    label="Price ($)"
-                    name="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={serviceFormData.price.toString()}
-                    onChange={handleServiceInputChange}
-                    required
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-gray-400 mr-2" />
+                    <Input
+                      label="Duration (minutes)"
+                      name="duration"
+                      type="number"
+                      min="15"
+                      step="15"
+                      value={serviceFormData.duration.toString()}
+                      onChange={handleServiceInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <DollarSign className="h-5 w-5 text-gray-400 mr-2" />
+                    <Input
+                      label="Price ($)"
+                      name="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={serviceFormData.price.toString()}
+                      onChange={handleServiceInputChange}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <Button type="submit" loading={isLoading}>
-                  {isEditingService ? 'Update Service' : 'Add Service'}
-                </Button>
                 
-                {isEditingService && (
-                  <Button type="button" variant="outline" onClick={handleCancelServiceEdit}>
-                    Cancel
+                <div className="flex space-x-3">
+                  <Button type="submit" loading={isLoading}>
+                    {isEditingService ? 'Update Service' : 'Add Service'}
                   </Button>
-                )}
-              </div>
-            </form>
-          </div>
-          
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Your Services</h3>
+                  
+                  {isEditingService && (
+                    <Button type="button" variant="outline" onClick={handleCancelServiceEdit}>
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </div>
             
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Service
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Duration
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {services.map((service) => (
-                      <tr key={service.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{service.name}</div>
-                          {service.description && (
-                            <div className="text-sm text-gray-500">{service.description}</div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{service.duration} minutes</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">${service.price.toFixed(2)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="mr-2"
-                            onClick={() => handleEditService(service)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteService(service.id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                    {services.length === 0 && (
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-md font-medium text-gray-900 mb-4">Your Services</h4>
+              
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                       <tr>
-                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                          No services added yet
-                        </td>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Service
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Duration
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {services.map((service) => (
+                        <tr key={service.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">{service.name}</div>
+                            {service.description && (
+                              <div className="text-sm text-gray-500">{service.description}</div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{service.duration} minutes</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">${service.price.toFixed(2)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mr-2"
+                              onClick={() => handleEditService(service)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteService(service.id)}
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      {services.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                            No services added yet
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </Card>
         
-        <Card title="Account Settings">
-          <div className="space-y-4">
+        <Card>
+          <div className="p-6">
             <div className="flex items-center mb-4">
               <UserCog className="h-5 w-5 text-gray-400 mr-2" />
               <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
             </div>
             
-            <Input
-              label="Full Name"
-              defaultValue=""
-              placeholder="John Doe"
-            />
-            
-            <Input
-              label="Business Name"
-              defaultValue=""
-              placeholder="My Business"
-            />
-            
-            <Input
-              label="Email Address"
-              type="email"
-              defaultValue=""
-              placeholder="john@example.com"
-              disabled
-              className="bg-gray-100"
-            />
-            
-            <div className="pt-4">
-              <Button>
-                Save Changes
-              </Button>
+            <div className="space-y-4">
+              <Input
+                label="Full Name"
+                defaultValue=""
+                placeholder="John Doe"
+              />
+              
+              <Input
+                label="Business Name"
+                defaultValue=""
+                placeholder="My Business"
+              />
+              
+              <Input
+                label="Email Address"
+                type="email"
+                defaultValue=""
+                placeholder="john@example.com"
+                disabled
+                className="bg-gray-100"
+              />
+              
+              <div className="pt-4">
+                <Button>
+                  Save Changes
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
         
-        <Card title="Notification Settings">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-md font-medium text-gray-900 mb-4">Email Notifications</h3>
-              
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <input
-                    id="new-appointment"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <label htmlFor="new-appointment" className="ml-2 block text-sm text-gray-700">
-                    New appointment notifications
-                  </label>
-                </div>
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Notification Settings</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-md font-medium text-gray-900 mb-4">Email Notifications</h4>
                 
-                <div className="flex items-center">
-                  <input
-                    id="appointment-reminder"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <label htmlFor="appointment-reminder" className="ml-2 block text-sm text-gray-700">
-                    Appointment reminders
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    id="payment-notification"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <label htmlFor="payment-notification" className="ml-2 block text-sm text-gray-700">
-                    Payment notifications
-                  </label>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <input
+                      id="new-appointment"
+                      type="checkbox"
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      defaultChecked
+                    />
+                    <label htmlFor="new-appointment" className="ml-2 block text-sm text-gray-700">
+                      New appointment notifications
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      id="appointment-reminder"
+                      type="checkbox"
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      defaultChecked
+                    />
+                    <label htmlFor="appointment-reminder" className="ml-2 block text-sm text-gray-700">
+                      Appointment reminders
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      id="payment-notification"
+                      type="checkbox"
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      defaultChecked
+                    />
+                    <label htmlFor="payment-notification" className="ml-2 block text-sm text-gray-700">
+                      Payment notifications
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="pt-4">
-              <Button>
-                Save Preferences
-              </Button>
+              
+              <div className="pt-4">
+                <Button>
+                  Save Preferences
+                </Button>
+              </div>
             </div>
           </div>
         </Card>

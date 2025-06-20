@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Send, Zap, RefreshCw } from 'lucide-react';
-import Card from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import Input from '../components/ui/Input';
+import { Input } from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { useClientsStore } from '../store/useClientsStore';
 import { toast } from 'sonner';
@@ -92,47 +92,53 @@ const Messages: React.FC = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <Card title="Settings">
-            <div className="space-y-4">
-              <Select
-                label="Client"
-                value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
-                options={clients.map(client => ({
-                  value: client.id,
-                  label: client.name
-                }))}
-                placeholder="Select a client"
-              />
-              
-              <div>
-                <Button 
-                  variant="outline" 
-                  fullWidth 
-                  onClick={handleClearConversation}
-                  className="mt-4"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Clear Conversation
-                </Button>
-              </div>
-              
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">AI Assistant Tips</h3>
-                <ul className="text-xs text-gray-600 space-y-2">
-                  <li>• Use the AI to draft responses to common client questions</li>
-                  <li>• Generate appointment scheduling messages</li>
-                  <li>• Create follow-up messages for no-shows</li>
-                  <li>• Craft payment reminders for overdue invoices</li>
-                </ul>
+          <Card>
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Settings</h3>
+              <div className="space-y-4">
+                <Select
+                  label="Client"
+                  value={selectedClient}
+                  onChange={(e) => setSelectedClient(e.target.value)}
+                  options={clients.map(client => ({
+                    value: client.id,
+                    label: client.name
+                  }))}
+                  placeholder="Select a client"
+                />
+                
+                <div>
+                  <Button 
+                    variant="outline" 
+                    fullWidth 
+                    onClick={handleClearConversation}
+                    className="mt-4"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Clear Conversation
+                  </Button>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">AI Assistant Tips</h3>
+                  <ul className="text-xs text-gray-600 space-y-2">
+                    <li>• Use the AI to draft responses to common client questions</li>
+                    <li>• Generate appointment scheduling messages</li>
+                    <li>• Create follow-up messages for no-shows</li>
+                    <li>• Craft payment reminders for overdue invoices</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </Card>
         </div>
         
         <div className="lg:col-span-2">
-          <Card title="Conversation" className="flex flex-col h-[600px]">
-            <div className="flex-1 overflow-y-auto mb-4">
+          <Card className="flex flex-col h-[600px]">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold">Conversation</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-500">
                   <MessageSquare className="h-12 w-12 mb-3 text-gray-300" />
@@ -140,7 +146,7 @@ const Messages: React.FC = () => {
                   <p className="text-sm">Start typing to create a message</p>
                 </div>
               ) : (
-                <div className="space-y-4 px-2">
+                <div className="space-y-4">
                   {messages.map((message) => (
                     <div 
                       key={message.id}
@@ -164,12 +170,12 @@ const Messages: React.FC = () => {
               )}
             </div>
             
-            <div className="mt-auto">
+            <div className="p-6 border-t">
               <div className="flex items-center space-x-2">
                 <Button
                   variant="secondary"
                   onClick={handleGenerateResponse}
-                  isLoading={isGenerating}
+                  loading={isGenerating}
                   disabled={messages.length === 0}
                 >
                   <Zap className="h-4 w-4 mr-1" />
