@@ -40,37 +40,24 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      // First, get all users from auth.users
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      // Use the new RPC function instead of supabase.auth.admin.listUsers()
+      const { data, error: rpcError } = await supabase.rpc('get_all_users_with_roles');
       
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-        throw new Error('Greška prilikom preuzimanja korisnika iz autentifikacije');
+      if (rpcError) {
+        console.error('Error calling get_all_users_with_roles RPC:', rpcError);
+        throw new Error('Greška prilikom preuzimanja korisnika i uloga');
       }
       
-      // Then get user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-      
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
-        throw new Error('Greška prilikom preuzimanja uloga korisnika');
-      }
-      
-      // Combine the data
-      const users = authUsers.users.map(user => {
-        const userRole = userRoles.find(role => role.user_id === user.id);
-        return {
-          id: userRole?.id || '',
-          user_id: user.id,
-          role: userRole?.role || 'pending', // Show 'pending' if no role is assigned yet
-          created_at: userRole?.created_at || user.created_at,
-          user: {
-            email: user.email || ''
-          }
-        };
-      });
+      // Map the data from RPC call to UserRole format
+      const users = data.map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        role: item.role,
+        created_at: item.created_at,
+        user: {
+          email: item.email
+        }
+      }));
       
       set({ users: users as UserRole[], isLoading: false });
     } catch (error: any) {
