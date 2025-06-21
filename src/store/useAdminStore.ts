@@ -30,7 +30,7 @@ interface AdminState {
   updateUserRole: (userId: string, role: string, notes?: string) => Promise<boolean>;
 }
 
-export const useAdminStore = create<AdminState>((set) => ({
+export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
   actions: [],
   isLoading: false,
@@ -40,22 +40,31 @@ export const useAdminStore = create<AdminState>((set) => ({
     try {
       set({ isLoading: true, error: null });
       
+      // First, get all users from auth.users
       const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
       
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+        throw new Error('Greška prilikom preuzimanja korisnika iz autentifikacije');
+      }
       
+      // Then get user roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
       
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        throw new Error('Greška prilikom preuzimanja uloga korisnika');
+      }
       
+      // Combine the data
       const users = authUsers.users.map(user => {
         const userRole = userRoles.find(role => role.user_id === user.id);
         return {
           id: userRole?.id || '',
           user_id: user.id,
-          role: userRole?.role || 'pending',
+          role: userRole?.role || 'pending', // Show 'pending' if no role is assigned yet
           created_at: userRole?.created_at || user.created_at,
           user: {
             email: user.email || ''
@@ -65,7 +74,11 @@ export const useAdminStore = create<AdminState>((set) => ({
       
       set({ users: users as UserRole[], isLoading: false });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      console.error('Error in fetchUsers:', error);
+      set({ 
+        error: error.message || 'Neočekivana greška prilikom preuzimanja korisnika', 
+        isLoading: false 
+      });
     }
   },
   
@@ -76,32 +89,48 @@ export const useAdminStore = create<AdminState>((set) => ({
       const { data, error } = await supabase
         .from('admin_actions')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50); // Limit to last 50 actions for performance
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching admin actions:', error);
+        throw new Error('Greška prilikom preuzimanja istorije akcija');
+      }
       
       set({ actions: data as AdminAction[], isLoading: false });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      console.error('Error in fetchActions:', error);
+      set({ 
+        error: error.message || 'Neočekivana greška prilikom preuzimanja istorije akcija', 
+        isLoading: false 
+      });
     }
   },
   
   updateUserRole: async (userId: string, role: string, notes?: string) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ error: null });
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Get current user (admin performing the action)
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Niste autentifikovani');
+      }
       
-      // Check if user already has a role
-      const { data: existingRole } = await supabase
+      // Check if user already has a role entry
+      const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
       
+      if (checkError) {
+        console.error('Error checking existing role:', checkError);
+        throw new Error('Greška prilikom provere postojeće uloge');
+      }
+      
       let result;
+      let actionType;
       
       if (existingRole) {
         // Update existing role
@@ -109,34 +138,45 @@ export const useAdminStore = create<AdminState>((set) => ({
           .from('user_roles')
           .update({ role })
           .eq('user_id', userId);
+        actionType = 'update_role';
       } else {
         // Insert new role
         result = await supabase
           .from('user_roles')
           .insert([{ user_id: userId, role }]);
+        actionType = 'assign_role';
       }
       
-      if (result.error) throw result.error;
+      if (result.error) {
+        console.error('Error updating user role:', result.error);
+        throw new Error('Greška prilikom ažuriranja uloge korisnika');
+      }
       
-      // Log the action
+      // Log the admin action
       const { error: actionError } = await supabase
         .from('admin_actions')
         .insert([{
           admin_id: user.id,
-          action_type: existingRole ? 'update_role' : 'assign_role',
+          action_type: actionType,
           target_user_id: userId,
-          notes
+          notes: notes || null
         }]);
       
-      if (actionError) throw actionError;
+      if (actionError) {
+        console.error('Error logging admin action:', actionError);
+        // Don't throw here as the main operation succeeded
+      }
       
-      // Refresh user list
-      await set.getState().fetchUsers();
-      await set.getState().fetchActions();
+      // Refresh data
+      await Promise.all([
+        get().fetchUsers(),
+        get().fetchActions()
+      ]);
       
       return true;
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      console.error('Error in updateUserRole:', error);
+      set({ error: error.message || 'Neočekivana greška prilikom ažuriranja uloge' });
       return false;
     }
   }
