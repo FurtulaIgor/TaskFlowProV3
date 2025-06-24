@@ -26,7 +26,7 @@ RETURNS TABLE (
   user_id uuid,
   role text,
   created_at timestamptz,
-  email character varying(255)
+  email text
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
