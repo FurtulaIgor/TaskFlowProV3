@@ -9,12 +9,14 @@ import Select from '../components/ui/Select';
 import { useAppointmentsStore } from '../store/useAppointmentsStore';
 import { useClientsStore } from '../store/useClientsStore';
 import { useServicesStore } from '../store/useServicesStore';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const Appointments: React.FC = () => {
   const { appointments, fetchAppointments, addAppointment, updateAppointment, deleteAppointment, isLoading } = useAppointmentsStore();
   const { clients, fetchClients } = useClientsStore();
   const { services, fetchServices } = useServicesStore();
+  const queryClient = useQueryClient();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -97,6 +99,13 @@ const Appointments: React.FC = () => {
       const success = await deleteAppointment(id);
       if (success) {
         toast.success('Termin je uspešno obrisan');
+        
+        // Invalidate React Query cache to refresh Dashboard data
+        queryClient.invalidateQueries({ queryKey: ['appointments'] });
+        
+        // Also invalidate any other related queries that might show appointment counts
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
       } else {
         toast.error('Greška prilikom brisanja termina');
       }
@@ -130,12 +139,20 @@ const Appointments: React.FC = () => {
         if (updated) {
           toast.success('Termin je uspešno ažuriran');
           setIsModalOpen(false);
+          
+          // Invalidate cache after update
+          queryClient.invalidateQueries({ queryKey: ['appointments'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         }
       } else {
         const added = await addAppointment(appointmentData);
         if (added) {
           toast.success('Termin je uspešno kreiran');
           setIsModalOpen(false);
+          
+          // Invalidate cache after creation
+          queryClient.invalidateQueries({ queryKey: ['appointments'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         }
       }
     } catch (error) {
