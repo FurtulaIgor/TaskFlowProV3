@@ -23,11 +23,17 @@ export default function Login() {
       if (user) {
         toast.success('Uspešno ste se prijavili');
         
-        // Invalidate all queries to ensure fresh data
-        queryClient.invalidateQueries();
+        // Set the session data in React Query cache to prevent race conditions
+        queryClient.setQueryData(['session'], user);
         
         // Navigate immediately without setTimeout
         navigate('/', { replace: true });
+        
+        // Invalidate queries after navigation to ensure fresh data
+        // Use setTimeout to allow session to fully establish
+        setTimeout(() => {
+          queryClient.invalidateQueries();
+        }, 100);
       } else {
         toast.error('Neispravni podaci za prijavu');
       }
