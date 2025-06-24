@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle } from 'lucide-react';
+import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -13,12 +13,15 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const Invoices: React.FC = () => {
-  const { invoices, fetchInvoices, addInvoice, markAsPaid, isLoading, error } = useInvoicesStore();
+  const { invoices, fetchInvoices, addInvoice, markAsPaid, markAsPending, updateInvoiceStatus, isLoading, error } = useInvoicesStore();
   const { clients, fetchClients } = useClientsStore();
   const { appointments, fetchAppointments } = useAppointmentsStore();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [newStatus, setNewStatus] = useState('');
   
   // Form state
   const [formData, setFormData] = useState({
@@ -51,6 +54,12 @@ const Invoices: React.FC = () => {
       due_date: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
     });
     setIsModalOpen(true);
+  };
+
+  const handleOpenStatusModal = (invoiceId: string, currentStatus: string) => {
+    setSelectedInvoiceId(invoiceId);
+    setNewStatus(currentStatus);
+    setIsStatusModalOpen(true);
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -102,11 +111,41 @@ const Invoices: React.FC = () => {
       toast.error('Greška prilikom kreiranja fakture');
     }
   };
+
+  const handleStatusUpdate = async () => {
+    if (!selectedInvoiceId || !newStatus) return;
+
+    try {
+      const updated = await updateInvoiceStatus(selectedInvoiceId, newStatus);
+      if (updated) {
+        const statusText = newStatus === 'paid' ? 'plaćeno' : 
+                          newStatus === 'pending' ? 'na čekanju' : 
+                          newStatus === 'cancelled' ? 'otkazano' : newStatus;
+        toast.success(`Status fakture je promenjen na "${statusText}"`);
+        setIsStatusModalOpen(false);
+        setSelectedInvoiceId(null);
+        setNewStatus('');
+      } else {
+        toast.error('Greška prilikom ažuriranja statusa fakture');
+      }
+    } catch (error) {
+      toast.error('Neočekivana greška prilikom ažuriranja statusa');
+    }
+  };
   
   const handleMarkAsPaid = async (id: string) => {
     const updated = await markAsPaid(id);
     if (updated) {
       toast.success('Faktura je označena kao plaćena');
+    } else {
+      toast.error('Greška prilikom ažuriranja fakture');
+    }
+  };
+
+  const handleMarkAsPending = async (id: string) => {
+    const updated = await markAsPending(id);
+    if (updated) {
+      toast.success('Faktura je vraćena na status "na čekanju"');
     } else {
       toast.error('Greška prilikom ažuriranja fakture');
     }
@@ -127,6 +166,38 @@ const Invoices: React.FC = () => {
   const clientAppointments = appointments.filter(
     appointment => appointment.client_id === formData.client_id
   );
+
+  // Get badge variant for status
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'success';
+      case 'pending':
+        return 'warning';
+      case 'cancelled':
+        return 'danger';
+      case 'overdue':
+        return 'danger';
+      default:
+        return 'default';
+    }
+  };
+
+  // Get status display text
+  const getStatusDisplayText = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'Plaćeno';
+      case 'pending':
+        return 'Na čekanju';
+      case 'cancelled':
+        return 'Otkazano';
+      case 'overdue':
+        return 'Prosročeno';
+      default:
+        return status;
+    }
+  };
   
   return (
     <div>
@@ -162,7 +233,9 @@ const Invoices: React.FC = () => {
             options={[
               { value: 'all', label: 'Svi statusi' },
               { value: 'pending', label: 'Na čekanju' },
-              { value: 'paid', label: 'Plaćeno' }
+              { value: 'paid', label: 'Plaćeno' },
+              { value: 'cancelled', label: 'Otkazano' },
+              { value: 'overdue', label: 'Prosročeno' }
             ]}
           />
         </div>
@@ -235,33 +308,52 @@ const Invoices: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge 
-                        variant={invoice.status === 'paid' ? 'success' : 'warning'}
-                      >
-                        {invoice.status === 'paid' ? 'Plaćeno' : 'Na čekanju'}
+                      <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                        {getStatusDisplayText(invoice.status)}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        {/* Edit Status Button */}
+                        <button
+                          onClick={() => handleOpenStatusModal(invoice.id, invoice.status)}
+                          className="text-gray-600 hover:text-blue-600 transition-colors"
+                          title="Promeni status"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+
+                        {/* PDF Download */}
                         {invoice.pdf_url && (
                           <a
                             href={invoice.pdf_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 transition-colors"
                             title="Preuzmi PDF"
                           >
-                            <Download className="h-5 w-5" />
+                            <Download className="h-4 w-4" />
                           </a>
                         )}
                         
+                        {/* Quick Actions */}
                         {invoice.status === 'pending' && (
                           <button
                             onClick={() => handleMarkAsPaid(invoice.id)}
-                            className="text-green-600 hover:text-green-900"
+                            className="text-green-600 hover:text-green-900 transition-colors"
                             title="Označi kao plaćeno"
                           >
-                            <DollarSign className="h-5 w-5" />
+                            <DollarSign className="h-4 w-4" />
+                          </button>
+                        )}
+
+                        {invoice.status === 'paid' && (
+                          <button
+                            onClick={() => handleMarkAsPending(invoice.id)}
+                            className="text-orange-600 hover:text-orange-900 transition-colors"
+                            title="Vrati na čekanje"
+                          >
+                            <RotateCcw className="h-4 w-4" />
                           </button>
                         )}
                       </div>
@@ -412,7 +504,7 @@ const Invoices: React.FC = () => {
             <ul className="text-xs text-gray-600 space-y-1">
               <li>• Faktura će automatski dobiti jedinstveni broj</li>
               <li>• Status fakture će biti postavljen na "Na čekanju"</li>
-              <li>• Možete kasnije označiti fakturu kao plaćenu</li>
+              <li>• Možete kasnije promeniti status fakture</li>
               <li>• PDF verzija fakture će biti dostupna nakon kreiranja</li>
             </ul>
           </div>
@@ -424,6 +516,75 @@ const Invoices: React.FC = () => {
             </p>
           </div>
         </form>
+      </Modal>
+
+      {/* Status Change Modal */}
+      <Modal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        title="Promeni status fakture"
+        size="md"
+        footer={
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" onClick={() => setIsStatusModalOpen(false)}>
+              Otkaži
+            </Button>
+            <Button onClick={handleStatusUpdate} loading={isLoading}>
+              Sačuvaj promenu
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {/* Information Banner */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-yellow-800 mb-1">
+                  Promena statusa fakture
+                </h4>
+                <p className="text-sm text-yellow-700">
+                  Promena statusa fakture će ažurirati datum plaćanja i druge povezane informacije. 
+                  Ova akcija se može poništiti kasnije.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Selection */}
+          <div>
+            <label htmlFor="newStatus" className="block text-sm font-medium text-gray-700 mb-2">
+              Novi status fakture
+            </label>
+            <Select
+              id="newStatus"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              options={[
+                { value: 'pending', label: 'Na čekanju - faktura čeka plaćanje' },
+                { value: 'paid', label: 'Plaćeno - faktura je plaćena' },
+                { value: 'cancelled', label: 'Otkazano - faktura je otkazana' },
+                { value: 'overdue', label: 'Prosročeno - faktura je prosročena' }
+              ]}
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Odaberite novi status za fakturu. Datum plaćanja će se automatski ažurirati.
+            </p>
+          </div>
+
+          {/* Status Explanations */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-800 mb-2">Objašnjenje statusa</h4>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li><strong>Na čekanju:</strong> Faktura je kreirana i čeka plaćanje</li>
+              <li><strong>Plaćeno:</strong> Faktura je plaćena (automatski se postavlja datum plaćanja)</li>
+              <li><strong>Otkazano:</strong> Faktura je otkazana i neće biti naplaćena</li>
+              <li><strong>Prosročeno:</strong> Faktura je prošla datum dospeća bez plaćanja</li>
+            </ul>
+          </div>
+        </div>
       </Modal>
     </div>
   );

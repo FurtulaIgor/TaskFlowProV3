@@ -30,6 +30,8 @@ interface InvoicesState {
   updateInvoice: (id: string, invoice: Partial<Invoice>) => Promise<Invoice | null>;
   deleteInvoice: (id: string) => Promise<boolean>;
   markAsPaid: (id: string) => Promise<Invoice | null>;
+  markAsPending: (id: string) => Promise<Invoice | null>;
+  updateInvoiceStatus: (id: string, status: string) => Promise<Invoice | null>;
   generatePdf: (invoice: Invoice) => Promise<string | null>;
 }
 
@@ -193,6 +195,74 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
     }
   },
   
+  markAsPending: async (id: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .update({ 
+          status: 'pending',
+          paid_date: null // Clear paid date when marking as pending
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          client:clients(name, email)
+        `)
+        .single();
+      
+      if (error) throw error;
+      
+      set(state => ({
+        invoices: state.invoices.map(i => i.id === id ? { ...i, ...data } as Invoice : i),
+        isLoading: false
+      }));
+      
+      return data as Invoice;
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+  
+  updateInvoiceStatus: async (id: string, status: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      const updateData: any = { status };
+      
+      // Set paid_date if marking as paid, clear it if marking as pending
+      if (status === 'paid') {
+        updateData.paid_date = new Date().toISOString();
+      } else if (status === 'pending') {
+        updateData.paid_date = null;
+      }
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .update(updateData)
+        .eq('id', id)
+        .select(`
+          *,
+          client:clients(name, email)
+        `)
+        .single();
+      
+      if (error) throw error;
+      
+      set(state => ({
+        invoices: state.invoices.map(i => i.id === id ? { ...i, ...data } as Invoice : i),
+        isLoading: false
+      }));
+      
+      return data as Invoice;
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+  
   generatePdf: async (invoice: Invoice) => {
     try {
       // Create a new PDF document
@@ -200,31 +270,31 @@ export const useInvoicesStore = create<InvoicesState>((set, get) => ({
       
       // Add title
       doc.setFontSize(20);
-      doc.text('INVOICE', 105, 20, { align: 'center' });
+      doc.text('FAKTURA', 105, 20, { align: 'center' });
       
       // Add invoice details
       doc.setFontSize(12);
-      doc.text(`Invoice #: ${invoice.id.substring(0, 8)}`, 20, 40);
-      doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, 20, 50);
-      doc.text(`Due Date: ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}`, 20, 60);
+      doc.text(`Broj fakture: ${invoice.id.substring(0, 8)}`, 20, 40);
+      doc.text(`Datum: ${new Date(invoice.created_at).toLocaleDateString('sr-RS')}`, 20, 50);
+      doc.text(`Datum dospeća: ${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('sr-RS') : 'Nije definisan'}`, 20, 60);
       
       // Add client details
-      doc.text('Bill To:', 20, 80);
+      doc.text('Račun za:', 20, 80);
       if (invoice.client) {
         doc.text(`${invoice.client.name}`, 20, 90);
         doc.text(`${invoice.client.email}`, 20, 100);
       }
       
       // Add amount details
-      doc.text('Amount Due:', 140, 80);
-      doc.text(`$${invoice.amount.toFixed(2)}`, 140, 90);
+      doc.text('Iznos za naplatu:', 140, 80);
+      doc.text(`${invoice.amount.toFixed(2)} RSD`, 140, 90);
       
       // Add status
-      doc.text(`Status: ${invoice.status.toUpperCase()}`, 140, 100);
+      doc.text(`Status: ${invoice.status === 'paid' ? 'PLAĆENO' : 'NA ČEKANJU'}`, 140, 100);
       
       // Add payment details if paid
       if (invoice.status === 'paid' && invoice.paid_date) {
-        doc.text(`Paid on: ${new Date(invoice.paid_date).toLocaleDateString()}`, 140, 110);
+        doc.text(`Plaćeno: ${new Date(invoice.paid_date).toLocaleDateString('sr-RS')}`, 140, 110);
       }
       
       // Get the PDF as base64
