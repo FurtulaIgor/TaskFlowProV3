@@ -55,9 +55,19 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+      
       const { data, error } = await supabase
         .from('services')
-        .insert(service)
+        .insert({
+          ...service,
+          user_id: user.id
+        })
         .select()
         .single();
       
