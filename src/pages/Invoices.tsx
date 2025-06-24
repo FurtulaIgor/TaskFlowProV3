@@ -120,7 +120,8 @@ const Invoices: React.FC = () => {
       if (updated) {
         const statusText = newStatus === 'paid' ? 'plaćeno' : 
                           newStatus === 'pending' ? 'na čekanju' : 
-                          newStatus === 'cancelled' ? 'otkazano' : newStatus;
+                          newStatus === 'cancelled' ? 'otkazano' : 
+                          newStatus === 'overdue' ? 'neplaćeno' : newStatus;
         toast.success(`Status fakture je promenjen na "${statusText}"`);
         setIsStatusModalOpen(false);
         setSelectedInvoiceId(null);
@@ -193,7 +194,7 @@ const Invoices: React.FC = () => {
       case 'cancelled':
         return 'Otkazano';
       case 'overdue':
-        return 'Prosročeno';
+        return 'Neplaćeno';
       default:
         return status;
     }
@@ -235,7 +236,7 @@ const Invoices: React.FC = () => {
               { value: 'pending', label: 'Na čekanju' },
               { value: 'paid', label: 'Plaćeno' },
               { value: 'cancelled', label: 'Otkazano' },
-              { value: 'overdue', label: 'Prosročeno' }
+              { value: 'overdue', label: 'Neplaćeno' }
             ]}
           />
         </div>
@@ -565,7 +566,7 @@ const Invoices: React.FC = () => {
                 { value: 'pending', label: 'Na čekanju - faktura čeka plaćanje' },
                 { value: 'paid', label: 'Plaćeno - faktura je plaćena' },
                 { value: 'cancelled', label: 'Otkazano - faktura je otkazana' },
-                { value: 'overdue', label: 'Prosročeno - faktura je prosročena' }
+                { value: 'overdue', label: 'Neplaćeno - faktura nije plaćena na vreme' }
               ]}
               required
             />
@@ -581,7 +582,7 @@ const Invoices: React.FC = () => {
               <li><strong>Na čekanju:</strong> Faktura je kreirana i čeka plaćanje</li>
               <li><strong>Plaćeno:</strong> Faktura je plaćena (automatski se postavlja datum plaćanja)</li>
               <li><strong>Otkazano:</strong> Faktura je otkazana i neće biti naplaćena</li>
-              <li><strong>Prosročeno:</strong> Faktura je prošla datum dospeća bez plaćanja</li>
+              <li><strong>Neplaćeno:</strong> Faktura nije plaćena na vreme ili je označena kao neplaćena</li>
             </ul>
           </div>
         </div>
