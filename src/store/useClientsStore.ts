@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { useAdminStore } from './useAdminStore';
 
 export interface Client {
   id: string;
@@ -54,13 +55,8 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
       let query = supabase.from('clients');
       
       if (isAdmin) {
-        // Admin can see all clients with user information
-        query = query.select(`
-          *,
-          user:user_id (
-            email
-          )
-        `);
+        // Admin can see all clients - fetch without join first
+        query = query.select('*');
       } else {
         // Regular users see only their own clients
         query = query.select('*').eq('user_id', user.id);
@@ -70,7 +66,23 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
       
       if (error) throw error;
       
-      const clients = data as Client[];
+      let clients = data as Client[];
+      
+      // If admin, enrich clients with user email data
+      if (isAdmin && clients.length > 0) {
+        // Fetch users data from admin store
+        await useAdminStore.getState().fetchUsers();
+        const users = useAdminStore.getState().users;
+        
+        // Enrich clients with user email
+        clients = clients.map(client => ({
+          ...client,
+          user: {
+            email: users.find(u => u.id === client.user_id)?.email || 'Unknown'
+          }
+        }));
+      }
+      
       set({ clients, isLoading: false });
       return clients;
     } catch (error: any) {
