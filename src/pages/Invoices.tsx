@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw } from 'lucide-react';
+import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw, FileDown } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -9,19 +9,22 @@ import Badge from '../components/ui/Badge';
 import { useInvoicesStore } from '../store/useInvoicesStore';
 import { useClientsStore } from '../store/useClientsStore';
 import { useAppointmentsStore } from '../store/useAppointmentsStore';
+import { useUserProfileStore } from '../store/useUserProfileStore';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const Invoices: React.FC = () => {
-  const { invoices, fetchInvoices, addInvoice, markAsPaid, markAsPending, updateInvoiceStatus, isLoading, error } = useInvoicesStore();
+  const { invoices, fetchInvoices, addInvoice, markAsPaid, markAsPending, updateInvoiceStatus, generatePdf, isLoading, error } = useInvoicesStore();
   const { clients, fetchClients } = useClientsStore();
   const { appointments, fetchAppointments } = useAppointmentsStore();
+  const { profile, fetchProfile } = useUserProfileStore();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [newStatus, setNewStatus] = useState('');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -38,7 +41,8 @@ const Invoices: React.FC = () => {
     fetchInvoices();
     fetchClients();
     fetchAppointments();
-  }, [fetchInvoices, fetchClients, fetchAppointments]);
+    fetchProfile();
+  }, [fetchInvoices, fetchClients, fetchAppointments, fetchProfile]);
   
   useEffect(() => {
     if (error) {
@@ -60,6 +64,40 @@ const Invoices: React.FC = () => {
     setSelectedInvoiceId(invoiceId);
     setNewStatus(currentStatus);
     setIsStatusModalOpen(true);
+  };
+
+  const handleGeneratePdf = async (invoice: any) => {
+    setIsGeneratingPdf(invoice.id);
+    
+    try {
+      const pdfData = await generatePdf(invoice, profile);
+      
+      if (pdfData) {
+        // Create a blob from the PDF data
+        const blob = new Blob([pdfData], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `faktura-${invoice.id.substring(0, 8)}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL
+        URL.revokeObjectURL(url);
+        
+        toast.success('PDF faktura je uspešno generisana i preuzeta');
+      } else {
+        toast.error('Greška prilikom generisanja PDF fakture');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Neočekivana greška prilikom generisanja PDF-a');
+    } finally {
+      setIsGeneratingPdf(null);
+    }
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -315,6 +353,20 @@ const Invoices: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        {/* Generate PDF Button */}
+                        <button
+                          onClick={() => handleGeneratePdf(invoice)}
+                          disabled={isGeneratingPdf === invoice.id}
+                          className="text-purple-600 hover:text-purple-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Generiši PDF fakturu"
+                        >
+                          {isGeneratingPdf === invoice.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent" />
+                          ) : (
+                            <FileDown className="h-4 w-4" />
+                          )}
+                        </button>
+
                         {/* Edit Status Button */}
                         <button
                           onClick={() => handleOpenStatusModal(invoice.id, invoice.status)}
