@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,7 @@ const Register: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const { signUp, isLoading } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const validateForm = () => {
     if (password !== confirmPassword) {
@@ -42,7 +44,12 @@ const Register: React.FC = () => {
       const user = await signUp(email, password);
       if (user) {
         toast.success('Uspešno ste se registrovali');
-        navigate('/');
+        
+        // Invalidate all queries to ensure fresh data
+        queryClient.invalidateQueries();
+        
+        // Navigate immediately without setTimeout
+        navigate('/', { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message || 'Došlo je do greške prilikom registracije');
@@ -286,7 +293,7 @@ const Register: React.FC = () => {
             </li>
             <li className="flex items-center">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-              Detaljni izvештaji i analitika
+              Detaljni izvještaji i analitika
             </li>
           </ul>
         </div>

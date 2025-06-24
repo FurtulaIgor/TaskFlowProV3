@@ -22,10 +22,12 @@ export default function Login() {
       console.log('Login result:', user);
       if (user) {
         toast.success('Uspešno ste se prijavili');
-        queryClient.invalidateQueries({ queryKey: ['session'] });
-        setTimeout(() => {
-          navigate('/');
-        }, 100);
+        
+        // Invalidate all queries to ensure fresh data
+        queryClient.invalidateQueries();
+        
+        // Navigate immediately without setTimeout
+        navigate('/', { replace: true });
       } else {
         toast.error('Neispravni podaci za prijavu');
       }

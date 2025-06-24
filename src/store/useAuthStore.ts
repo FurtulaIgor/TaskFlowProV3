@@ -75,11 +75,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Fetch user roles from database
       const roles = await get().getUserRoles(data.user.id);
+      
+      // Create default user role if none exists
+      if (roles.length === 0) {
+        try {
+          await supabase
+            .from('user_roles')
+            .insert([{ user_id: data.user.id, role: 'user' }]);
+          roles.push('user');
+        } catch (roleError) {
+          console.warn('Could not create default user role:', roleError);
+        }
+      }
+      
       set({ 
         user: data.user, 
         session: data.session, 
         roles,
-        isLoading: false 
+        isLoading: false,
+        error: null
       });
       return data.user;
     } catch (error: any) {
@@ -94,13 +108,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
 
-      // New users won't have roles yet
-      set({ 
-        user: data.user, 
-        session: data.session, 
-        roles: [],
-        isLoading: false 
-      });
+      if (data.user) {
+        // Create default user role for new users
+        try {
+          await supabase
+            .from('user_roles')
+            .insert([{ user_id: data.user.id, role: 'user' }]);
+        } catch (roleError) {
+          console.warn('Could not create default user role:', roleError);
+        }
+
+        set({ 
+          user: data.user, 
+          session: data.session, 
+          roles: ['user'], // Default role for new users
+          isLoading: false,
+          error: null
+        });
+      } else {
+        set({ 
+          user: null, 
+          session: null, 
+          roles: [],
+          isLoading: false,
+          error: null
+        });
+      }
+      
       return data.user;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
