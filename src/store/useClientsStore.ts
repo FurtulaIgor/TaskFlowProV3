@@ -74,11 +74,11 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
         await useAdminStore.getState().fetchUsers();
         const users = useAdminStore.getState().users;
         
-        // Enrich clients with user email
+        // Enrich clients with user email - fix the lookup to use user_id instead of id
         clients = clients.map(client => ({
           ...client,
           user: {
-            email: users.find(u => u.id === client.user_id)?.email || 'Unknown'
+            email: users.find(u => u.user_id === client.user_id)?.user?.email || 'Unknown'
           }
         }));
       }
