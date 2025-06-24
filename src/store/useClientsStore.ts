@@ -9,6 +9,7 @@ export interface Client {
   email: string;
   phone: string;
   notes: string | null;
+  last_interaction?: string | null;
 }
 
 interface ClientsState {
@@ -55,9 +56,22 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
+      // Get the current authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Include the user_id in the client data
+      const clientData = {
+        ...client,
+        user_id: user.id
+      };
+      
       const { data, error } = await supabase
         .from('clients')
-        .insert(client)
+        .insert(clientData)
         .select()
         .single();
       
