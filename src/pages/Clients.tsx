@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Edit, Trash2, Search, Mail, Phone, User, FileText } from 'lucide-react';
+import { Users, UserPlus, Edit, Trash2, Search, Mail, Phone, User, FileText, Calendar, Shield } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
+import Badge from '../components/ui/Badge';
 import { useClientsStore, Client } from '../store/useClientsStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { toast } from 'sonner';
 
 const Clients: React.FC = () => {
   const { clients, fetchClients, addClient, updateClient, deleteClient, isLoading, error } = useClientsStore();
+  const { checkRole } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  
+  // Check if current user is admin
+  const isAdmin = checkRole('admin');
   
   // Form state
   const [formData, setFormData] = useState({
@@ -166,18 +172,41 @@ const Clients: React.FC = () => {
     return (
       client.name.toLowerCase().includes(searchLower) ||
       client.email.toLowerCase().includes(searchLower) ||
-      client.phone.includes(searchQuery)
+      client.phone.includes(searchQuery) ||
+      (isAdmin && client.user?.email?.toLowerCase().includes(searchLower))
     );
   });
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('sr-RS', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
   
   return (
     <div>
       <div className="mb-6 flex items-center">
         <Users className="h-8 w-8 text-blue-600 mr-3" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Klijenti</h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">Klijenti</h1>
+            {isAdmin && (
+              <Badge variant="primary" className="flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Admin pogled
+              </Badge>
+            )}
+          </div>
           <p className="mt-1 text-sm text-gray-600">
-            Upravljanje informacijama o klijentima
+            {isAdmin 
+              ? 'Upravljanje svim klijentima u sistemu (admin pogled)'
+              : 'Upravljanje informacijama o klijentima'
+            }
           </p>
         </div>
       </div>
@@ -189,7 +218,7 @@ const Clients: React.FC = () => {
           </div>
           <Input
             type="text"
-            placeholder="Pretražite klijente..."
+            placeholder={isAdmin ? "Pretražite klijente ili korisnike..." : "Pretražite klijente..."}
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -221,8 +250,13 @@ const Clients: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Telefon
                   </th>
+                  {isAdmin && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Uneo korisnik
+                    </th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Poslednji kontakt
+                    {isAdmin ? 'Datum unosa' : 'Poslednji kontakt'}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Akcije
@@ -252,11 +286,27 @@ const Clients: React.FC = () => {
                         <div className="text-sm text-gray-900">{client.phone}</div>
                       </div>
                     </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 text-gray-400 mr-2" />
+                          <div className="text-sm text-gray-900">
+                            {client.user?.email || 'Nepoznat korisnik'}
+                          </div>
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {client.last_interaction 
-                          ? new Date(client.last_interaction).toLocaleDateString('sr-RS') 
-                          : 'Nikad'}
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 text-gray-400 mr-2" />
+                        <div className="text-sm text-gray-900">
+                          {isAdmin 
+                            ? formatDate(client.created_at)
+                            : (client.last_interaction 
+                                ? new Date(client.last_interaction).toLocaleDateString('sr-RS') 
+                                : 'Nikad')
+                          }
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -281,7 +331,7 @@ const Clients: React.FC = () => {
                 ))}
                 {filteredClients.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-center text-sm text-gray-500">
                       {clients.length === 0 
                         ? 'Još uvek nema dodanih klijenata' 
                         : 'Nema klijenata koji odgovaraju pretrazi'}

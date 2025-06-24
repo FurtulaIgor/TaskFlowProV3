@@ -10,6 +10,10 @@ export interface Client {
   phone: string;
   notes: string | null;
   last_interaction?: string | null;
+  // Admin view fields
+  user?: {
+    email: string;
+  };
 }
 
 interface ClientsState {
@@ -32,10 +36,37 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name');
+      // Get current user to check if admin
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Check if user is admin
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      
+      const isAdmin = userRoles?.some(role => role.role === 'admin') || false;
+      
+      let query = supabase.from('clients');
+      
+      if (isAdmin) {
+        // Admin can see all clients with user information
+        query = query.select(`
+          *,
+          user:user_id (
+            email
+          )
+        `);
+      } else {
+        // Regular users see only their own clients
+        query = query.select('*').eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
       
@@ -79,7 +110,7 @@ export const useClientsStore = create<ClientsState>((set, get) => ({
       
       const newClient = data as Client;
       set(state => ({ 
-        clients: [...state.clients, newClient],
+        clients: [newClient, ...state.clients],
         isLoading: false 
       }));
       
