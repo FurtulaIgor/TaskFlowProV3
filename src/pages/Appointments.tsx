@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { format, addDays, startOfWeek, addMinutes } from 'date-fns';
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Edit } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Edit, User, Clock, DollarSign, FileText, AlertCircle } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -93,12 +93,12 @@ const Appointments: React.FC = () => {
   };
   
   const handleDeleteAppointment = async (id: string) => {
-    if (confirm('Are you sure you want to delete this appointment?')) {
+    if (confirm('Da li ste sigurni da želite da obrišete ovaj termin?')) {
       const success = await deleteAppointment(id);
       if (success) {
-        toast.success('Appointment deleted successfully');
+        toast.success('Termin je uspešno obrisan');
       } else {
-        toast.error('Failed to delete appointment');
+        toast.error('Greška prilikom brisanja termina');
       }
     }
   };
@@ -128,18 +128,18 @@ const Appointments: React.FC = () => {
       if (isEditMode && selectedAppointment) {
         const updated = await updateAppointment(selectedAppointment, appointmentData);
         if (updated) {
-          toast.success('Appointment updated successfully');
+          toast.success('Termin je uspešno ažuriran');
           setIsModalOpen(false);
         }
       } else {
         const added = await addAppointment(appointmentData);
         if (added) {
-          toast.success('Appointment created successfully');
+          toast.success('Termin je uspešno kreiran');
           setIsModalOpen(false);
         }
       }
     } catch (error) {
-      toast.error('Error saving appointment');
+      toast.error('Greška prilikom čuvanja termina');
     }
   };
   
@@ -179,9 +179,9 @@ const Appointments: React.FC = () => {
       <div className="mb-6 flex items-center">
         <Calendar className="h-8 w-8 text-blue-600 mr-3" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Termini</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage your client appointments
+            Upravljanje terminima sa klijentima
           </p>
         </div>
       </div>
@@ -203,7 +203,7 @@ const Appointments: React.FC = () => {
         
         <Button onClick={handleOpenModal}>
           <Plus className="h-5 w-5 mr-1" />
-          New Appointment
+          Novi termin
         </Button>
       </div>
       
@@ -213,7 +213,7 @@ const Appointments: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="w-24 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Time
+                  Vreme
                 </th>
                 {weekDays.map((day) => (
                   <th key={day.toString()} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -276,103 +276,190 @@ const Appointments: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isEditMode ? 'Edit Appointment' : 'New Appointment'}
+        title={isEditMode ? 'Uredi termin' : 'Kreiraj novi termin'}
+        size="lg"
         footer={
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
+              Otkaži
             </Button>
-            <Button onClick={handleSubmit} isLoading={isLoading}>
-              {isEditMode ? 'Update' : 'Create'}
+            <Button onClick={handleSubmit} loading={isLoading}>
+              {isEditMode ? 'Sačuvaj izmene' : 'Kreiraj termin'}
             </Button>
           </div>
         }
       >
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Information Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-blue-800 mb-1">
+                  Kreiranje novog termina
+                </h4>
+                <p className="text-sm text-blue-700">
+                  Popunite sva potrebna polja da biste zakazali termin sa klijentom. Sva polja označena sa * su obavezna.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Client Selection */}
+          <div>
+            <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-2">
+              <User className="inline h-4 w-4 mr-1" />
+              Klijent *
+            </label>
             <Select
-              label="Client"
+              id="client_id"
               name="client_id"
               value={formData.client_id}
               onChange={handleInputChange}
               options={clients.map(client => ({
                 value: client.id,
-                label: client.name
+                label: `${client.name} (${client.email})`
               }))}
-              placeholder="Select a client"
+              placeholder="Izaberite klijenta za termin"
               required
             />
-            
+            <p className="mt-1 text-xs text-gray-500">
+              Odaberite klijenta sa kojim želite da zakažete termin
+            </p>
+          </div>
+          
+          {/* Service Selection */}
+          <div>
+            <label htmlFor="service_id" className="block text-sm font-medium text-gray-700 mb-2">
+              <DollarSign className="inline h-4 w-4 mr-1" />
+              Usluga *
+            </label>
             <Select
-              label="Service"
+              id="service_id"
               name="service_id"
               value={formData.service_id}
               onChange={handleInputChange}
               options={services.map(service => ({
                 value: service.id,
-                label: `${service.name} ($${service.price}) - ${service.duration} min`
+                label: `${service.name} - ${service.price} RSD (${service.duration} min)`
               }))}
-              placeholder="Select a service"
+              placeholder="Izaberite uslugu"
               required
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p className="mt-1 text-xs text-gray-500">
+              Odaberite uslugu koju ćete pružiti klijentu tokom termina
+            </p>
+          </div>
+          
+          {/* Date and Time */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="inline h-4 w-4 mr-1" />
+                Datum termina *
+              </label>
               <Input
-                label="Date"
+                id="date"
                 name="date"
                 type="date"
                 value={formData.date}
                 onChange={handleInputChange}
                 required
               />
-              
+              <p className="mt-1 text-xs text-gray-500">
+                Odaberite datum kada će se termin održati
+              </p>
+            </div>
+            
+            <div>
+              <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-2">
+                <Clock className="inline h-4 w-4 mr-1" />
+                Vreme početka *
+              </label>
               <Input
-                label="Time"
+                id="time"
                 name="time"
                 type="time"
                 value={formData.time}
                 onChange={handleInputChange}
                 required
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Unesite vreme kada termin počinje
+              </p>
             </div>
-            
+          </div>
+          
+          {/* Duration */}
+          <div>
+            <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
+              <Clock className="inline h-4 w-4 mr-1" />
+              Trajanje (minuti) *
+            </label>
             <Input
-              label="Duration (minutes)"
+              id="duration"
               name="duration"
               type="number"
               min="15"
               step="15"
               value={formData.duration.toString()}
               onChange={handleInputChange}
+              placeholder="npr. 60"
               required
             />
-            
+            <p className="mt-1 text-xs text-gray-500">
+              Unesite koliko minuta će termin trajati (minimum 15 minuta, korak od 15 minuta)
+            </p>
+          </div>
+          
+          {/* Status */}
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+              Status termina *
+            </label>
             <Select
-              label="Status"
+              id="status"
               name="status"
               value={formData.status}
               onChange={handleInputChange}
               options={[
-                { value: 'pending', label: 'Pending' },
-                { value: 'confirmed', label: 'Confirmed' },
-                { value: 'cancelled', label: 'Cancelled' }
+                { value: 'pending', label: 'Na čekanju - termin još nije potvrđen' },
+                { value: 'confirmed', label: 'Potvrđen - termin je potvrđen' },
+                { value: 'cancelled', label: 'Otkazan - termin je otkazan' }
               ]}
               required
             />
-            
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={3}
-                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                value={formData.notes}
-                onChange={handleInputChange}
-              />
-            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Odaberite trenutni status termina
+            </p>
+          </div>
+          
+          {/* Notes */}
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText className="inline h-4 w-4 mr-1" />
+              Dodatne napomene
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows={4}
+              className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 resize-none"
+              value={formData.notes}
+              onChange={handleInputChange}
+              placeholder="npr. Klijent je alergičan na određene proizvode, posebni zahtevi, priprema pre termina..."
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Opcionalno - dodajte važne informacije o terminu, posebne zahteve ili napomene
+            </p>
+          </div>
+
+          {/* Required fields note */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <p className="text-sm text-gray-800">
+              <span className="font-medium">Napomena:</span> Polja označena sa * su obavezna za popunjavanje. 
+              Trajanje termina će se automatski izračunati na osnovu odabrane usluge.
+            </p>
           </div>
         </form>
       </Modal>
