@@ -84,9 +84,22 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Include user_id in the appointment data
+      const appointmentWithUserId = {
+        ...appointment,
+        user_id: user.id
+      };
+      
       const { data, error } = await supabase
         .from('appointments')
-        .insert(appointment)
+        .insert(appointmentWithUserId)
         .select(`
           *,
           client:clients(name, email, phone),
