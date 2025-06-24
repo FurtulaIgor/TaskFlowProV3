@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw, FileDown } from 'lucide-react';
+import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw, FileDown, Eye, X } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -22,9 +22,12 @@ const Invoices: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [newStatus, setNewStatus] = useState('');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<string | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [currentInvoiceForPdf, setCurrentInvoiceForPdf] = useState<any>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -77,18 +80,12 @@ const Invoices: React.FC = () => {
         const blob = new Blob([pdfData], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         
-        // Create a temporary link and trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `faktura-${invoice.id.substring(0, 8)}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Set up preview
+        setPdfPreviewUrl(url);
+        setCurrentInvoiceForPdf(invoice);
+        setIsPdfPreviewOpen(true);
         
-        // Clean up the URL
-        URL.revokeObjectURL(url);
-        
-        toast.success('PDF faktura je uspešno generisana i preuzeta');
+        toast.success('PDF faktura je uspešno generisana');
       } else {
         toast.error('Greška prilikom generisanja PDF fakture');
       }
@@ -98,6 +95,29 @@ const Invoices: React.FC = () => {
     } finally {
       setIsGeneratingPdf(null);
     }
+  };
+
+  const handleDownloadPdf = () => {
+    if (pdfPreviewUrl && currentInvoiceForPdf) {
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = pdfPreviewUrl;
+      link.download = `faktura-${currentInvoiceForPdf.id.substring(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('PDF faktura je preuzeta');
+    }
+  };
+
+  const handleClosePdfPreview = () => {
+    if (pdfPreviewUrl) {
+      URL.revokeObjectURL(pdfPreviewUrl);
+    }
+    setPdfPreviewUrl(null);
+    setCurrentInvoiceForPdf(null);
+    setIsPdfPreviewOpen(false);
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -358,12 +378,12 @@ const Invoices: React.FC = () => {
                           onClick={() => handleGeneratePdf(invoice)}
                           disabled={isGeneratingPdf === invoice.id}
                           className="text-purple-600 hover:text-purple-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Generiši PDF fakturu"
+                          title="Prikaži PDF fakturu"
                         >
                           {isGeneratingPdf === invoice.id ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent" />
                           ) : (
-                            <FileDown className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
 
@@ -636,6 +656,75 @@ const Invoices: React.FC = () => {
               <li><strong>Otkazano:</strong> Faktura je otkazana i neće biti naplaćena</li>
               <li><strong>Neplaćeno:</strong> Faktura nije plaćena na vreme ili je označena kao neplaćena</li>
             </ul>
+          </div>
+        </div>
+      </Modal>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        isOpen={isPdfPreviewOpen}
+        onClose={handleClosePdfPreview}
+        title={`PDF Faktura #${currentInvoiceForPdf?.id?.substring(0, 8) || ''}`}
+        size="xl"
+        footer={
+          <div className="flex justify-between items-center w-full">
+            <div className="text-sm text-gray-600">
+              {currentInvoiceForPdf && (
+                <>
+                  Klijent: {currentInvoiceForPdf.client?.name} | 
+                  Iznos: {currentInvoiceForPdf.amount?.toFixed(2)} RSD | 
+                  Status: {getStatusDisplayText(currentInvoiceForPdf.status)}
+                </>
+              )}
+            </div>
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={handleClosePdfPreview}>
+                <X className="h-4 w-4 mr-2" />
+                Zatvori
+              </Button>
+              <Button onClick={handleDownloadPdf}>
+                <Download className="h-4 w-4 mr-2" />
+                Preuzmi PDF
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {/* PDF Preview Container */}
+          <div className="bg-gray-100 rounded-lg p-4">
+            <div className="bg-white rounded shadow-lg" style={{ minHeight: '600px' }}>
+              {pdfPreviewUrl ? (
+                <iframe
+                  src={pdfPreviewUrl}
+                  className="w-full h-[600px] rounded"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-[600px]">
+                  <div className="text-center">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Učitavanje PDF pregleda...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PDF Actions Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-blue-800 mb-1">
+                  PDF Faktura
+                </h4>
+                <p className="text-sm text-blue-700">
+                  Možete pregledati fakturu u PDF formatu. Kliknite na "Preuzmi PDF" da sačuvate fakturu na vaš računar, 
+                  ili "Zatvori" da se vratite na listu faktura.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </Modal>
