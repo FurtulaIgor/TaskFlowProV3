@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, UserCog, Clock, DollarSign, Building, MapPin, Phone, Mail, CreditCard, FileText, User, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings as SettingsIcon, UserCog, Clock, DollarSign, Building, MapPin, Phone, Mail, CreditCard, FileText, User, Save, AlertCircle, CheckCircle, Bell } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -43,9 +43,18 @@ const Settings: React.FC = () => {
     registration_number: '',
     bank_account: ''
   });
+
+  // Notification settings state
+  const [notificationSettings, setNotificationSettings] = useState({
+    newAppointments: true,
+    appointmentReminders: true,
+    paymentNotifications: true
+  });
   
   const [isEditingService, setIsEditingService] = useState(false);
   const [hasProfileChanges, setHasProfileChanges] = useState(false);
+  const [hasNotificationChanges, setHasNotificationChanges] = useState(false);
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
   
   useEffect(() => {
     fetchServices();
@@ -102,6 +111,14 @@ const Settings: React.FC = () => {
     const { name, value } = e.target;
     setProfileFormData(prev => ({ ...prev, [name]: value }));
     setHasProfileChanges(true);
+  };
+
+  const handleNotificationChange = (setting: keyof typeof notificationSettings) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+    setHasNotificationChanges(true);
   };
   
   const handleEditService = (service: Service) => {
@@ -185,6 +202,24 @@ const Settings: React.FC = () => {
       }
     } catch (error) {
       toast.error('Neočekivana greška prilikom čuvanja profila');
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setIsSavingNotifications(true);
+    
+    try {
+      // Simulate API call - in real app, you would save to backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Here you would typically save to your backend/database
+      // For now, we'll just show success message
+      toast.success('Podešavanja obaveštenja su uspešno sačuvana');
+      setHasNotificationChanges(false);
+    } catch (error) {
+      toast.error('Greška prilikom čuvanja podešavanja obaveštenja');
+    } finally {
+      setIsSavingNotifications(false);
     }
   };
 
@@ -668,55 +703,114 @@ const Settings: React.FC = () => {
         {/* Notification Settings Card */}
         <Card className="lg:col-span-2">
           <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Podešavanja obaveštenja</h3>
+            <div className="flex items-center mb-6">
+              <Bell className="h-5 w-5 text-gray-400 mr-2" />
+              <h3 className="text-lg font-medium text-gray-900">Podešavanja obaveštenja</h3>
+            </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Information Banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800 mb-1">
+                      Email obaveštenja
+                    </h4>
+                    <p className="text-sm text-blue-700">
+                      Odaberite koja obaveštenja želite da primate na vašu email adresu. 
+                      Možete u bilo kom trenutku promeniti ova podešavanja.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <h4 className="text-md font-medium text-gray-900 mb-4">Email obaveštenja</h4>
                 
-                <div className="space-y-2">
-                  <div className="flex items-center">
+                <div className="space-y-4">
+                  <div className="flex items-start">
                     <input
                       id="new-appointment"
                       type="checkbox"
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      defaultChecked
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                      checked={notificationSettings.newAppointments}
+                      onChange={() => handleNotificationChange('newAppointments')}
                     />
-                    <label htmlFor="new-appointment" className="ml-2 block text-sm text-gray-700">
-                      Obaveštenja o novim terminima
-                    </label>
+                    <div className="ml-3">
+                      <label htmlFor="new-appointment" className="block text-sm font-medium text-gray-700">
+                        Obaveštenja o novim terminima
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Primićete email kada se zakažu novi termini ili kada klijenti promene postojeće termine
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center">
+                  <div className="flex items-start">
                     <input
                       id="appointment-reminder"
                       type="checkbox"
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      defaultChecked
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                      checked={notificationSettings.appointmentReminders}
+                      onChange={() => handleNotificationChange('appointmentReminders')}
                     />
-                    <label htmlFor="appointment-reminder" className="ml-2 block text-sm text-gray-700">
-                      Podsetnici za termine
-                    </label>
+                    <div className="ml-3">
+                      <label htmlFor="appointment-reminder" className="block text-sm font-medium text-gray-700">
+                        Podsetnici za termine
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Automatski podsetnici 24 sata pre zakazanih termina
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center">
+                  <div className="flex items-start">
                     <input
                       id="payment-notification"
                       type="checkbox"
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      defaultChecked
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                      checked={notificationSettings.paymentNotifications}
+                      onChange={() => handleNotificationChange('paymentNotifications')}
                     />
-                    <label htmlFor="payment-notification" className="ml-2 block text-sm text-gray-700">
-                      Obaveštenja o plaćanjima
-                    </label>
+                    <div className="ml-3">
+                      <label htmlFor="payment-notification" className="block text-sm font-medium text-gray-700">
+                        Obaveštenja o plaćanjima
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Obaveštenja kada su fakture plaćene ili kada su dospeće za plaćanje
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="pt-4">
-                <Button>
-                  Sačuvaj podešavanja
-                </Button>
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {hasNotificationChanges && (
+                      <div className="flex items-center text-orange-600 text-sm">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Imate nesačuvane promene
+                      </div>
+                    )}
+                    {!hasNotificationChanges && (
+                      <div className="flex items-center text-green-600 text-sm">
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Podešavanja su sačuvana
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={handleSaveNotifications}
+                    loading={isSavingNotifications}
+                    disabled={!hasNotificationChanges}
+                    className="flex items-center"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Sačuvaj podešavanja
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
