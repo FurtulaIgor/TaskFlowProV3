@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Edit, Trash2, Search } from 'lucide-react';
+import { Users, UserPlus, Edit, Trash2, Search, Mail, Phone, User, FileText } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -21,6 +21,13 @@ const Clients: React.FC = () => {
     phone: '',
     notes: ''
   });
+
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
   
   useEffect(() => {
     fetchClients();
@@ -31,6 +38,40 @@ const Clients: React.FC = () => {
       toast.error(error);
     }
   }, [error]);
+
+  const validateForm = () => {
+    const errors = {
+      name: '',
+      email: '',
+      phone: ''
+    };
+
+    // Validate name
+    if (!formData.name.trim()) {
+      errors.name = 'Ime i prezime je obavezno';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Ime mora imati najmanje 2 karaktera';
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      errors.email = 'Email adresa je obavezna';
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = 'Unesite validnu email adresu';
+    }
+
+    // Validate phone
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{8,}$/;
+    if (!formData.phone.trim()) {
+      errors.phone = 'Broj telefona je obavezan';
+    } else if (!phoneRegex.test(formData.phone.trim())) {
+      errors.phone = 'Unesite validan broj telefona';
+    }
+
+    setFormErrors(errors);
+    return !errors.name && !errors.email && !errors.phone;
+  };
   
   const handleOpenModal = () => {
     setIsEditMode(false);
@@ -40,6 +81,11 @@ const Clients: React.FC = () => {
       email: '',
       phone: '',
       notes: ''
+    });
+    setFormErrors({
+      name: '',
+      email: '',
+      phone: ''
     });
     setIsModalOpen(true);
   };
@@ -51,18 +97,23 @@ const Clients: React.FC = () => {
       phone: client.phone,
       notes: client.notes || ''
     });
+    setFormErrors({
+      name: '',
+      email: '',
+      phone: ''
+    });
     setSelectedClient(client.id);
     setIsEditMode(true);
     setIsModalOpen(true);
   };
   
   const handleDeleteClient = async (id: string) => {
-    if (confirm('Are you sure you want to delete this client?')) {
+    if (confirm('Da li ste sigurni da želite da obrišete ovog klijenta?')) {
       const success = await deleteClient(id);
       if (success) {
-        toast.success('Client deleted successfully');
+        toast.success('Klijent je uspešno obrisan');
       } else {
-        toast.error('Failed to delete client');
+        toast.error('Greška prilikom brisanja klijenta');
       }
     }
   };
@@ -70,27 +121,42 @@ const Clients: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (formErrors[name as keyof typeof formErrors]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!validateForm()) {
+      toast.error('Molimo ispravite greške u formi');
+      return;
+    }
+    
     try {
       if (isEditMode && selectedClient) {
         const updated = await updateClient(selectedClient, formData);
         if (updated) {
-          toast.success('Client updated successfully');
+          toast.success('Podaci o klijentu su uspešno ažurirani');
           setIsModalOpen(false);
+        } else {
+          toast.error('Greška prilikom ažuriranja podataka o klijentu');
         }
       } else {
         const added = await addClient(formData);
         if (added) {
-          toast.success('Client added successfully');
+          toast.success('Novi klijent je uspešno dodat');
           setIsModalOpen(false);
+        } else {
+          toast.error('Greška prilikom dodavanja novog klijenta');
         }
       }
     } catch (error) {
-      toast.error('Error saving client');
+      console.error('Error saving client:', error);
+      toast.error('Neočekivana greška prilikom čuvanja podataka');
     }
   };
   
@@ -109,9 +175,9 @@ const Clients: React.FC = () => {
       <div className="mb-6 flex items-center">
         <Users className="h-8 w-8 text-blue-600 mr-3" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Klijenti</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage your client information
+            Upravljanje informacijama o klijentima
           </p>
         </div>
       </div>
@@ -123,7 +189,7 @@ const Clients: React.FC = () => {
           </div>
           <Input
             type="text"
-            placeholder="Search clients..."
+            placeholder="Pretražite klijente..."
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -132,7 +198,7 @@ const Clients: React.FC = () => {
         
         <Button onClick={handleOpenModal}>
           <UserPlus className="h-5 w-5 mr-1" />
-          Add Client
+          Dodaj klijenta
         </Button>
       </div>
       
@@ -147,54 +213,67 @@ const Clients: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    Ime i prezime
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone
+                    Telefon
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Interaction
+                    Poslednji kontakt
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Akcije
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50">
+                  <tr key={client.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                          <User className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{client.email}</div>
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 text-gray-400 mr-2" />
+                        <div className="text-sm text-gray-900">{client.email}</div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{client.phone}</div>
+                      <div className="flex items-center">
+                        <Phone className="h-4 w-4 text-gray-400 mr-2" />
+                        <div className="text-sm text-gray-900">{client.phone}</div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {client.last_interaction 
-                          ? new Date(client.last_interaction).toLocaleDateString() 
-                          : 'Never'}
+                          ? new Date(client.last_interaction).toLocaleDateString('sr-RS') 
+                          : 'Nikad'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleEditClient(client)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                          title="Uredi klijenta"
                         >
-                          <Edit className="h-5 w-5" />
+                          <Edit className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteClient(client.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                          title="Obriši klijenta"
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
@@ -202,10 +281,10 @@ const Clients: React.FC = () => {
                 ))}
                 {filteredClients.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
                       {clients.length === 0 
-                        ? 'No clients added yet' 
-                        : 'No clients match your search'}
+                        ? 'Još uvek nema dodanih klijenata' 
+                        : 'Nema klijenata koji odgovaraju pretrazi'}
                     </td>
                   </tr>
                 )}
@@ -219,58 +298,125 @@ const Clients: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isEditMode ? 'Edit Client' : 'Add New Client'}
+        title={isEditMode ? 'Uredi podatke o klijentu' : 'Dodaj novog klijenta'}
+        size="md"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
+            <Button 
+              variant="outline" 
+              onClick={() => setIsModalOpen(false)}
+              disabled={isLoading}
+            >
+              Otkaži
             </Button>
-            <Button onClick={handleSubmit} isLoading={isLoading}>
-              {isEditMode ? 'Update' : 'Add'}
+            <Button 
+              onClick={handleSubmit} 
+              loading={isLoading}
+              disabled={isLoading}
+            >
+              {isEditMode ? 'Sačuvaj izmene' : 'Dodaj klijenta'}
             </Button>
           </div>
         }
       >
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Name Field */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <User className="inline h-4 w-4 mr-1" />
+              Ime i prezime *
+            </label>
             <Input
-              label="Full Name"
+              id="name"
               name="name"
+              type="text"
               value={formData.name}
               onChange={handleInputChange}
+              placeholder="npr. Marko Petrović"
+              className={`${formErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               required
             />
-            
+            {formErrors.name && (
+              <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Unesite puno ime i prezime klijenta
+            </p>
+          </div>
+          
+          {/* Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <Mail className="inline h-4 w-4 mr-1" />
+              Email adresa *
+            </label>
             <Input
-              label="Email"
+              id="email"
               name="email"
               type="email"
               value={formData.email}
               onChange={handleInputChange}
+              placeholder="npr. marko@example.com"
+              className={`${formErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               required
             />
-            
+            {formErrors.email && (
+              <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Email adresa za komunikaciju i slanje faktura
+            </p>
+          </div>
+          
+          {/* Phone Field */}
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <Phone className="inline h-4 w-4 mr-1" />
+              Broj telefona *
+            </label>
             <Input
-              label="Phone Number"
+              id="phone"
               name="phone"
+              type="tel"
               value={formData.phone}
               onChange={handleInputChange}
+              placeholder="npr. +381 60 123 4567"
+              className={`${formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               required
             />
-            
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={3}
-                className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                value={formData.notes || ''}
-                onChange={handleInputChange}
-              />
-            </div>
+            {formErrors.phone && (
+              <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Kontakt telefon za hitne slučajeve i potvrde termina
+            </p>
+          </div>
+          
+          {/* Notes Field */}
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText className="inline h-4 w-4 mr-1" />
+              Dodatne napomene
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows={4}
+              className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 resize-none"
+              value={formData.notes}
+              onChange={handleInputChange}
+              placeholder="npr. Preferencije za termine, alergije, posebni zahtevi..."
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Opcionalno - dodajte važne informacije o klijentu
+            </p>
+          </div>
+
+          {/* Required fields note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              <span className="font-medium">Napomena:</span> Polja označena sa * su obavezna za popunjavanje.
+            </p>
           </div>
         </form>
       </Modal>
