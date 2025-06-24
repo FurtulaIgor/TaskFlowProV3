@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Download, Search, DollarSign } from 'lucide-react';
+import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -95,20 +95,20 @@ const Invoices: React.FC = () => {
       
       const added = await addInvoice(newInvoice);
       if (added) {
-        toast.success('Invoice created successfully');
+        toast.success('Faktura je uspešno kreirana');
         setIsModalOpen(false);
       }
     } catch (error) {
-      toast.error('Error creating invoice');
+      toast.error('Greška prilikom kreiranja fakture');
     }
   };
   
   const handleMarkAsPaid = async (id: string) => {
     const updated = await markAsPaid(id);
     if (updated) {
-      toast.success('Invoice marked as paid');
+      toast.success('Faktura je označena kao plaćena');
     } else {
-      toast.error('Failed to update invoice');
+      toast.error('Greška prilikom ažuriranja fakture');
     }
   };
   
@@ -133,9 +133,9 @@ const Invoices: React.FC = () => {
       <div className="mb-6 flex items-center">
         <FileText className="h-8 w-8 text-blue-600 mr-3" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Fakture</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage your client invoices
+            Upravljanje fakturama i naplatom
           </p>
         </div>
       </div>
@@ -148,7 +148,7 @@ const Invoices: React.FC = () => {
             </div>
             <Input
               type="text"
-              placeholder="Search invoices..."
+              placeholder="Pretražite fakture..."
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -160,16 +160,16 @@ const Invoices: React.FC = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'pending', label: 'Pending' },
-              { value: 'paid', label: 'Paid' }
+              { value: 'all', label: 'Svi statusi' },
+              { value: 'pending', label: 'Na čekanju' },
+              { value: 'paid', label: 'Plaćeno' }
             ]}
           />
         </div>
         
         <Button onClick={handleOpenModal}>
           <Plus className="h-5 w-5 mr-1" />
-          New Invoice
+          Nova faktura
         </Button>
       </div>
       
@@ -184,25 +184,25 @@ const Invoices: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Invoice #
+                    Broj fakture
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Client
+                    Klijent
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+                    Datum kreiranja
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Due Date
+                    Datum dospeća
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
+                    Iznos
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Akcije
                   </th>
                 </tr>
               </thead>
@@ -216,29 +216,29 @@ const Invoices: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {invoice.client?.name || 'Unknown Client'}
+                        {invoice.client?.name || 'Nepoznat klijent'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {new Date(invoice.created_at).toLocaleDateString()}
+                        {new Date(invoice.created_at).toLocaleDateString('sr-RS')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}
+                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('sr-RS') : 'Nije definisan'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ${invoice.amount.toFixed(2)}
+                        {invoice.amount.toFixed(2)} RSD
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge 
                         variant={invoice.status === 'paid' ? 'success' : 'warning'}
                       >
-                        {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                        {invoice.status === 'paid' ? 'Plaćeno' : 'Na čekanju'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -249,6 +249,7 @@ const Invoices: React.FC = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-900"
+                            title="Preuzmi PDF"
                           >
                             <Download className="h-5 w-5" />
                           </a>
@@ -258,6 +259,7 @@ const Invoices: React.FC = () => {
                           <button
                             onClick={() => handleMarkAsPaid(invoice.id)}
                             className="text-green-600 hover:text-green-900"
+                            title="Označi kao plaćeno"
                           >
                             <DollarSign className="h-5 w-5" />
                           </button>
@@ -268,10 +270,10 @@ const Invoices: React.FC = () => {
                 ))}
                 {filteredInvoices.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
                       {invoices.length === 0 
-                        ? 'No invoices created yet' 
-                        : 'No invoices match your search'}
+                        ? 'Još uvek nema kreiranih faktura' 
+                        : 'Nema faktura koje odgovaraju pretrazi'}
                     </td>
                   </tr>
                 )}
@@ -285,65 +287,141 @@ const Invoices: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Create New Invoice"
+        title="Kreiraj novu fakturu"
+        size="lg"
         footer={
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
+              Otkaži
             </Button>
             <Button onClick={handleSubmit} loading={isLoading}>
-              Create Invoice
+              Kreiraj fakturu
             </Button>
           </div>
         }
       >
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Information Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-blue-800 mb-1">
+                  Kreiranje nove fakture
+                </h4>
+                <p className="text-sm text-blue-700">
+                  Popunite potrebne informacije za kreiranje fakture. Možete povezati fakturu sa postojećim terminom ili kreirati nezavisnu fakturu.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Client Selection */}
+          <div>
+            <label htmlFor="client_id" className="block text-sm font-medium text-gray-700 mb-2">
+              <User className="inline h-4 w-4 mr-1" />
+              Klijent *
+            </label>
             <Select
-              label="Client"
+              id="client_id"
               name="client_id"
               value={formData.client_id}
               onChange={handleInputChange}
               options={clients.map(client => ({
                 value: client.id,
-                label: client.name
+                label: `${client.name} (${client.email})`
               }))}
-              placeholder="Select a client"
+              placeholder="Izaberite klijenta za fakturu"
               required
             />
-            
+            <p className="mt-1 text-xs text-gray-500">
+              Odaberite klijenta kome želite da ispošaljete fakturu
+            </p>
+          </div>
+          
+          {/* Appointment Selection */}
+          <div>
+            <label htmlFor="appointment_id" className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar className="inline h-4 w-4 mr-1" />
+              Povezani termin (opciono)
+            </label>
             <Select
-              label="Appointment (Optional)"
+              id="appointment_id"
               name="appointment_id"
               value={formData.appointment_id}
               onChange={handleInputChange}
               options={clientAppointments.map(appointment => ({
                 value: appointment.id,
-                label: `${new Date(appointment.start_time).toLocaleDateString()} - ${appointment.service?.name || 'Service'}`
+                label: `${new Date(appointment.start_time).toLocaleDateString('sr-RS')} - ${appointment.service?.name || 'Usluga'} (${appointment.service?.price || 0} RSD)`
               }))}
-              placeholder="Select an appointment"
+              placeholder="Izaberite termin (opciono)"
               disabled={!formData.client_id}
             />
-            
+            <p className="mt-1 text-xs text-gray-500">
+              {!formData.client_id 
+                ? 'Prvo izaberite klijenta da biste videli dostupne termine'
+                : 'Opcionalno - izaberite termin da se automatski popuni iznos na osnovu cene usluge'
+              }
+            </p>
+          </div>
+          
+          {/* Amount */}
+          <div>
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
+              <DollarSign className="inline h-4 w-4 mr-1" />
+              Iznos (RSD) *
+            </label>
             <Input
-              label="Amount ($)"
+              id="amount"
               name="amount"
               type="number"
               step="0.01"
               min="0"
               value={formData.amount}
               onChange={handleInputChange}
+              placeholder="npr. 5000.00"
               required
             />
-            
+            <p className="mt-1 text-xs text-gray-500">
+              Unesite iznos fakture u dinarima. Ako ste izabrali termin, iznos će se automatski popuniti na osnovu cene usluge.
+            </p>
+          </div>
+          
+          {/* Due Date */}
+          <div>
+            <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-2">
+              <Receipt className="inline h-4 w-4 mr-1" />
+              Datum dospeća *
+            </label>
             <Input
-              label="Due Date"
+              id="due_date"
               name="due_date"
               type="date"
               value={formData.due_date}
               onChange={handleInputChange}
               required
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Odaberite datum do kada faktura treba da bude plaćena. Podrazumevano je postavljen na 7 dana od danas.
+            </p>
+          </div>
+
+          {/* Additional Information */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-800 mb-2">Dodatne informacije</h4>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li>• Faktura će automatski dobiti jedinstveni broj</li>
+              <li>• Status fakture će biti postavljen na "Na čekanju"</li>
+              <li>• Možete kasnije označiti fakturu kao plaćenu</li>
+              <li>• PDF verzija fakture će biti dostupna nakon kreiranja</li>
+            </ul>
+          </div>
+
+          {/* Required fields note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              <span className="font-medium">Napomena:</span> Polja označena sa * su obavezna za popunjavanje.
+            </p>
           </div>
         </form>
       </Modal>
