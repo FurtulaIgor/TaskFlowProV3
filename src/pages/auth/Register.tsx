@@ -48,8 +48,8 @@ const Register: React.FC = () => {
         // Invalidate all queries to ensure fresh data
         queryClient.invalidateQueries();
         
-        // Navigate immediately without setTimeout
-        navigate('/', { replace: true });
+        // Navigate to app dashboard
+        navigate('/app', { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message || 'Došlo je do greške prilikom registracije');
@@ -272,6 +272,16 @@ const Register: React.FC = () => {
                 Prijavite se
               </Link>
             </p>
+          </div>
+
+          {/* Back to Landing */}
+          <div className="mt-4 text-center">
+            <Link 
+              to="/" 
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              ← Nazad na početnu
+            </Link>
           </div>
         </div>
 

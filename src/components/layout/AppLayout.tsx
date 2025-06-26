@@ -15,19 +15,19 @@ const AppLayout: React.FC = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth/login');
+    navigate('/');
   };
 
   const isAdmin = checkRole('admin');
 
   const navigation = [
-    { name: 'Dashboard', to: '/', icon: BarChart2 },
-    { name: 'Appointments', to: '/appointments', icon: Calendar },
-    { name: 'Clients', to: '/clients', icon: Users },
-    { name: 'Invoices', to: '/invoices', icon: FileText },
-    { name: 'Messages', to: '/messages', icon: MessageSquare },
-    ...(isAdmin ? [{ name: 'Admin', to: '/admin', icon: Shield }] : []),
-    { name: 'Settings', to: '/settings', icon: Settings }
+    { name: 'Dashboard', to: '/app', icon: BarChart2 },
+    { name: 'Appointments', to: '/app/appointments', icon: Calendar },
+    { name: 'Clients', to: '/app/clients', icon: Users },
+    { name: 'Invoices', to: '/app/invoices', icon: FileText },
+    { name: 'Messages', to: '/app/messages', icon: MessageSquare },
+    ...(isAdmin ? [{ name: 'Admin', to: '/app/admin', icon: Shield }] : []),
+    { name: 'Settings', to: '/app/settings', icon: Settings }
   ];
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -50,6 +50,7 @@ const AppLayout: React.FC = () => {
               <NavLink
                 key={item.name}
                 to={item.to}
+                end={item.to === '/app'}
                 className={({ isActive }) =>
                   `group flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive
@@ -113,6 +114,7 @@ const AppLayout: React.FC = () => {
               <NavLink
                 key={item.name}
                 to={item.to}
+                end={item.to === '/app'}
                 onClick={closeMobileMenu}
                 className={({ isActive }) =>
                   `group flex items-center px-4 py-2 text-base font-medium rounded-md transition-colors ${

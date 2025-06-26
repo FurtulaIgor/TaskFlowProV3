@@ -5,6 +5,7 @@ import AuthLayout from './components/auth/AuthLayout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
+import LandingPage from './pages/LandingPage';
 import { ProtectedRoute } from './components/routing/ProtectedRoute';
 import { AdminRoute } from './components/routing/AdminRoute';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
@@ -26,13 +27,18 @@ function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Auth Routes */}
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
         </Route>
 
+        {/* App Routes */}
         <Route
-          path="/"
+          path="/app"
           element={
             <ProtectedRoute>
               <AppLayout />
@@ -92,7 +98,16 @@ function App() {
           />
         </Route>
 
-        <Route path="*" element={<Navigate to="/auth/login" replace />} />
+        {/* Redirect old routes to new structure */}
+        <Route path="/appointments" element={<Navigate to="/app/appointments" replace />} />
+        <Route path="/clients" element={<Navigate to="/app/clients" replace />} />
+        <Route path="/invoices" element={<Navigate to="/app/invoices" replace />} />
+        <Route path="/messages" element={<Navigate to="/app/messages" replace />} />
+        <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
+        <Route path="/admin" element={<Navigate to="/app/admin" replace />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
