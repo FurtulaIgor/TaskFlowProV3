@@ -5,17 +5,21 @@ import { Button } from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
-import { Shield, UserCog, History, AlertCircle } from 'lucide-react';
+import { Shield, UserCog, History, AlertCircle, Trash2, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 const Admin: React.FC = () => {
-  const { users, actions, fetchUsers, fetchActions, updateUserRole, isLoading, error } = useAdminStore();
+  const { users, actions, fetchUsers, fetchActions, updateUserRole, deleteUser, isLoading, error } = useAdminStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedUserEmail, setSelectedUserEmail] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState('user');
   const [notes, setNotes] = useState('');
+  const [deleteNotes, setDeleteNotes] = useState('');
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
   
   useEffect(() => {
     fetchUsers();
@@ -34,6 +38,13 @@ const Admin: React.FC = () => {
     setSelectedRole(currentRole === 'pending' ? 'user' : currentRole);
     setNotes('');
     setIsModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (userId: string, userEmail: string) => {
+    setSelectedUser(userId);
+    setSelectedUserEmail(userEmail);
+    setDeleteNotes('');
+    setIsDeleteModalOpen(true);
   };
   
   const handleUpdateRole = async () => {
@@ -57,6 +68,30 @@ const Admin: React.FC = () => {
       toast.error('Neočekivana greška prilikom ažuriranja uloge');
     } finally {
       setIsUpdatingRole(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    setIsDeletingUser(true);
+    
+    try {
+      const success = await deleteUser(selectedUser, deleteNotes);
+      
+      if (success) {
+        toast.success('Korisnik je uspešno obrisan');
+        setIsDeleteModalOpen(false);
+        setSelectedUser(null);
+        setSelectedUserEmail('');
+        setDeleteNotes('');
+      } else {
+        toast.error('Greška prilikom brisanja korisnika');
+      }
+    } catch (error) {
+      toast.error('Neočekivana greška prilikom brisanja korisnika');
+    } finally {
+      setIsDeletingUser(false);
     }
   };
   
@@ -165,15 +200,26 @@ const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Button
-                            onClick={() => handleOpenModal(user.user_id, user.role)}
-                            variant="outline"
-                            size="sm"
-                            className="hover:bg-blue-50 hover:border-blue-300"
-                          >
-                            <UserCog className="h-4 w-4 mr-1" />
-                            Upravljaj ulogom
-                          </Button>
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              onClick={() => handleOpenModal(user.user_id, user.role)}
+                              variant="outline"
+                              size="sm"
+                              className="hover:bg-blue-50 hover:border-blue-300"
+                            >
+                              <UserCog className="h-4 w-4 mr-1" />
+                              Upravljaj ulogom
+                            </Button>
+                            <Button
+                              onClick={() => handleOpenDeleteModal(user.user_id, user.user?.email || 'Nepoznat email')}
+                              variant="destructive"
+                              size="sm"
+                              className="hover:bg-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Obriši
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -226,9 +272,10 @@ const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant="info">
+                          <Badge variant={action.action_type === 'delete_user' ? 'danger' : 'info'}>
                             {action.action_type === 'update_role' ? 'Ažuriranje uloge' : 
                              action.action_type === 'assign_role' ? 'Dodeljivanje uloge' :
+                             action.action_type === 'delete_user' ? 'Brisanje korisnika' :
                              action.action_type.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </td>
@@ -314,6 +361,95 @@ const Admin: React.FC = () => {
               onChange={(e) => setNotes(e.target.value)}
               disabled={isUpdatingRole}
             />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete User Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Brisanje korisnika"
+        footer={
+          <div className="flex justify-end space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteModalOpen(false)}
+              disabled={isDeletingUser}
+            >
+              Otkaži
+            </Button>
+            <Button 
+              onClick={handleDeleteUser} 
+              loading={isDeletingUser}
+              disabled={isDeletingUser}
+              variant="destructive"
+            >
+              {isDeletingUser ? 'Brisanje...' : 'Obriši korisnika'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <UserX className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-red-800 mb-1">
+                  Upozorenje - Nepovratna akcija
+                </h4>
+                <p className="text-sm text-red-700">
+                  Ova akcija će trajno obrisati korisnika i sve povezane podatke (klijente, termine, fakture, usluge). 
+                  Ova akcija se ne može poništiti!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-800 mb-2">Korisnik koji će biti obrisan:</h4>
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                <span className="text-sm font-medium text-red-600">
+                  {selectedUserEmail[0]?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-gray-900">{selectedUserEmail}</span>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">Šta će biti obrisano:</h4>
+            <ul className="text-sm text-yellow-700 space-y-1">
+              <li>• Korisnički nalog i profil</li>
+              <li>• Svi klijenti korisnika</li>
+              <li>• Sve usluge korisnika</li>
+              <li>• Svi termini korisnika</li>
+              <li>• Sve fakture korisnika</li>
+              <li>• Sve uloge i dozvole</li>
+            </ul>
+          </div>
+          
+          <div>
+            <label htmlFor="deleteNotes" className="block text-sm font-medium text-gray-700 mb-1">
+              Razlog brisanja (opciono)
+            </label>
+            <textarea
+              id="deleteNotes"
+              rows={3}
+              className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="Unesite razlog za brisanje korisnika..."
+              value={deleteNotes}
+              onChange={(e) => setDeleteNotes(e.target.value)}
+              disabled={isDeletingUser}
+            />
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <p className="text-sm text-gray-800">
+              <span className="font-medium">Potvrda:</span> Da biste nastavili sa brisanjem, kliknite na dugme "Obriši korisnika". 
+              Ova akcija je nepovratna i svi podaci će biti trajno uklonjeni.
+            </p>
           </div>
         </div>
       </Modal>
