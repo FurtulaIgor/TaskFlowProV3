@@ -173,105 +173,41 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       set({ error: null });
       
-      // Get current user (admin performing the action)
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      // Get current user session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
         throw new Error('Niste autentifikovani');
       }
 
       // Prevent admin from deleting themselves
-      if (user.id === userId) {
+      if (session.user.id === userId) {
         throw new Error('Ne možete obrisati svoj vlastiti nalog');
       }
+
+      // Call the Edge Function to delete the user
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`;
       
-      // First, delete all related data for the user
-      // Delete user_roles
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (roleError) {
-        console.error('Error deleting user roles:', roleError);
-        throw new Error('Greška prilikom brisanja uloga korisnika');
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          notes
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Greška prilikom brisanja korisnika');
       }
 
-      // Delete user_profiles if exists
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('user_id', userId);
+      const result = await response.json();
       
-      if (profileError) {
-        console.error('Error deleting user profile:', profileError);
-        // Don't throw here as profile might not exist
-      }
-
-      // Delete user's clients
-      const { error: clientsError } = await supabase
-        .from('clients')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (clientsError) {
-        console.error('Error deleting user clients:', clientsError);
-        throw new Error('Greška prilikom brisanja klijenata korisnika');
-      }
-
-      // Delete user's services
-      const { error: servicesError } = await supabase
-        .from('services')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (servicesError) {
-        console.error('Error deleting user services:', servicesError);
-        throw new Error('Greška prilikom brisanja usluga korisnika');
-      }
-
-      // Delete user's appointments
-      const { error: appointmentsError } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (appointmentsError) {
-        console.error('Error deleting user appointments:', appointmentsError);
-        throw new Error('Greška prilikom brisanja termina korisnika');
-      }
-
-      // Delete user's invoices
-      const { error: invoicesError } = await supabase
-        .from('invoices')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (invoicesError) {
-        console.error('Error deleting user invoices:', invoicesError);
-        throw new Error('Greška prilikom brisanja faktura korisnika');
-      }
-
-      // Finally, delete the user from auth.users using admin API
-      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (deleteUserError) {
-        console.error('Error deleting user from auth:', deleteUserError);
-        throw new Error('Greška prilikom brisanja korisničkog naloga');
-      }
-      
-      // Log the admin action
-      const { error: actionError } = await supabase
-        .from('admin_actions')
-        .insert([{
-          admin_id: user.id,
-          action_type: 'delete_user',
-          target_user_id: userId,
-          notes: notes || null
-        }]);
-      
-      if (actionError) {
-        console.error('Error logging admin action:', actionError);
-        // Don't throw here as the main operation succeeded
+      if (!result.success) {
+        throw new Error(result.error || 'Greška prilikom brisanja korisnika');
       }
       
       // Refresh data
