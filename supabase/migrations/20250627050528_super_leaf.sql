@@ -72,29 +72,7 @@ EXCEPTION
 END;
 $$;
 
--- 3. Create uid helper function if it doesn't exist
--- This ensures auth.uid() works properly in all contexts
-DO $$
-BEGIN
-  -- Check if uid function exists in auth schema
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'auth' AND p.proname = 'uid'
-  ) THEN
-    -- Create a simple uid function that returns current user id
-    CREATE OR REPLACE FUNCTION auth.uid()
-    RETURNS uuid
-    LANGUAGE sql
-    STABLE
-    AS $$
-      SELECT COALESCE(
-        current_setting('request.jwt.claims', true)::json ->> 'sub',
-        (current_setting('request.jwt.claims', true)::json ->> 'user_id')
-      )::uuid;
-    $$;
-  END IF;
-END $$;
+
 
 -- 4. Create get_all_users_with_roles RPC function for admin panel
 -- This function allows admins to fetch all users with their roles
