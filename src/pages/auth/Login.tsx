@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useLanguage } from '@/lib/i18n';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Mail, Lock, Eye, EyeOff, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
+import LanguageSelector from '@/components/common/LanguageSelector';
 
 export default function Login() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { signIn, isLoading } = useAuthStore();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +24,7 @@ export default function Login() {
       const user = await signIn(email, password);
       console.log('Login result:', user);
       if (user) {
-        toast.success('Uspešno ste se prijavili');
+        toast.success(t.auth.loginSuccess);
         
         // Set the session data in React Query cache to prevent race conditions
         queryClient.setQueryData(['session'], user);
@@ -35,27 +38,32 @@ export default function Login() {
           queryClient.invalidateQueries();
         }, 100);
       } else {
-        toast.error('Neispravni podaci za prijavu');
+        toast.error(t.auth.invalidCredentials);
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Došlo je do greške prilikom prijave');
+      toast.error(error.message || t.auth.loginError);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
+        {/* Language Selector */}
+        <div className="flex justify-end mb-4">
+          <LanguageSelector />
+        </div>
+
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <Briefcase className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Dobrodošli nazad
+            {t.auth.welcomeBack}
           </h2>
           <p className="text-gray-600">
-            Prijavite se na svoj TaskFlowPro nalog
+            {t.auth.signInToAccount}
           </p>
         </div>
 
@@ -65,7 +73,7 @@ export default function Login() {
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email adresa
+                {t.auth.emailAddress}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -88,7 +96,7 @@ export default function Login() {
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Lozinka
+                {t.common.password}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -102,7 +110,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Unesite vašu lozinku"
+                  placeholder={t.auth.enterPassword}
                   className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl"
                 />
                 <button
@@ -129,12 +137,12 @@ export default function Login() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Zapamti me
+                  {t.auth.rememberMe}
                 </label>
               </div>
               <div className="text-sm">
                 <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                  Zaboravili ste lozinku?
+                  {t.auth.forgotPassword}
                 </a>
               </div>
             </div>
@@ -147,7 +155,7 @@ export default function Login() {
               disabled={isLoading}
               className="h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              {isLoading ? 'Prijavljivanje...' : 'Prijavite se'}
+              {isLoading ? t.auth.signingIn : t.auth.signIn}
             </Button>
           </form>
 
@@ -166,12 +174,12 @@ export default function Login() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Nemate nalog?{' '}
+              {t.auth.dontHaveAccount}{' '}
               <Link 
                 to="/auth/register" 
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
-                Registrujte se besplatno
+                {t.auth.signUp}
               </Link>
             </p>
           </div>
@@ -182,7 +190,7 @@ export default function Login() {
               to="/" 
               className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
-              ← Nazad na početnu
+              ← {t.auth.backToHome}
             </Link>
           </div>
         </div>
@@ -190,10 +198,10 @@ export default function Login() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500">
-            Prijavom se slažete sa našim{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-500">Uslovima korišćenja</a>
+            {t.auth.agreeToTerms}{' '}
+            <a href="#" className="text-blue-600 hover:text-blue-500">{t.auth.termsOfService}</a>
             {' '}i{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-500">Politikom privatnosti</a>
+            <a href="#" className="text-blue-600 hover:text-blue-500">{t.auth.privacyPolicy}</a>
           </p>
         </div>
       </div>

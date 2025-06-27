@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Calendar, Users, FileText, DollarSign, TrendingUp, Activity } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLanguage } from '@/lib/i18n';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -38,6 +39,7 @@ const Dashboard: React.FC = () => {
   const { fetchAppointments } = useAppointmentsStore();
   const { fetchClients } = useClientsStore();
   const { fetchInvoices } = useInvoicesStore();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
@@ -105,6 +107,7 @@ const Dashboard: React.FC = () => {
       appt.start_time.includes(todayStr)
     ).length;
     
+    
     setTodayAppointments(todayAppts);
     
     // Count total clients
@@ -136,7 +139,7 @@ const Dashboard: React.FC = () => {
     labels: last7Days.map(date => format(new Date(date), 'dd.MM')),
     datasets: [
       {
-        label: 'Prihod (RSD)',
+        label: t.dashboard.revenueChart,
         data: last7Days.map(date => {
           return invoices
             .filter((inv: Invoice) => inv.created_at.includes(date) && inv.status === 'paid')
@@ -160,7 +163,7 @@ const Dashboard: React.FC = () => {
     labels: last7Days.map(date => format(new Date(date), 'dd.MM')),
     datasets: [
       {
-        label: 'Broj termina',
+        label: t.dashboard.appointmentsChart,
         data: last7Days.map(date => {
           return appointments.filter((appt: Appointment) => appt.start_time.includes(date)).length;
         }),
@@ -189,7 +192,7 @@ const Dashboard: React.FC = () => {
         borderWidth: 1,
         callbacks: {
           label: function(context: any) {
-            return `Prihod: ${context.parsed.y.toFixed(2)} RSD`;
+            return `${t.dashboard.todaysRevenue}: ${context.parsed.y.toFixed(2)} RSD`;
           }
         }
       },
@@ -234,7 +237,7 @@ const Dashboard: React.FC = () => {
         borderWidth: 1,
         callbacks: {
           label: function(context: any) {
-            return `Termini: ${context.parsed.y}`;
+            return `${t.nav.appointments}: ${context.parsed.y}`;
           }
         }
       },
@@ -274,9 +277,9 @@ const Dashboard: React.FC = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Pregled poslovanja za {format(new Date(), 'dd.MM.yyyy')}
+            {t.dashboard.businessOverview} {format(new Date(), 'dd.MM.yyyy')}
           </p>
         </div>
         <Button
@@ -289,7 +292,7 @@ const Dashboard: React.FC = () => {
           className="flex items-center gap-2"
         >
           <Activity className="h-4 w-4" />
-          Osveži podatke
+          {t.dashboard.refreshData}
         </Button>
       </div>
       
@@ -299,12 +302,12 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Današnji termini</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">{t.dashboard.todaysAppointments}</p>
                 <p className="text-3xl font-bold text-gray-900">{todayAppointments}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {todayAppointments === 0 ? 'Nema zakazanih termina' : 
-                   todayAppointments === 1 ? 'termin danas' : 
-                   'termina danas'}
+                  {todayAppointments === 0 ? t.dashboard.noAppointmentsToday : 
+                   todayAppointments === 1 ? t.dashboard.appointmentToday : 
+                   t.dashboard.appointmentsToday}
                 </p>
               </div>
               <div className="bg-blue-100 p-3 rounded-full">
@@ -315,10 +318,10 @@ const Dashboard: React.FC = () => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => navigate('/appointments')}
+                onClick={() => navigate('/app/appointments')}
                 className="w-full"
               >
-                Pogledaj termine
+                {t.dashboard.viewAppointments}
               </Button>
             </div>
           </CardContent>
@@ -328,12 +331,12 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Ukupno klijenata</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">{t.dashboard.totalClients}</p>
                 <p className="text-3xl font-bold text-gray-900">{totalClients}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {totalClients === 0 ? 'Nema registrovanih klijenata' :
-                   totalClients === 1 ? 'registrovan klijent' :
-                   'registrovanih klijenata'}
+                  {totalClients === 0 ? t.dashboard.noRegisteredClients :
+                   totalClients === 1 ? t.dashboard.registeredClient :
+                   t.dashboard.registeredClients}
                 </p>
               </div>
               <div className="bg-teal-100 p-3 rounded-full">
@@ -344,10 +347,10 @@ const Dashboard: React.FC = () => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => navigate('/clients')}
+                onClick={() => navigate('/app/clients')}
                 className="w-full"
               >
-                Upravljaj klijentima
+                {t.dashboard.manageClients}
               </Button>
             </div>
           </CardContent>
@@ -357,10 +360,10 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Današnji prihod</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">{t.dashboard.todaysRevenue}</p>
                 <p className="text-3xl font-bold text-gray-900">{revenueToday.toFixed(2)} RSD</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {revenueToday === 0 ? 'Nema prihoda danas' : 'od plaćenih faktura'}
+                  {revenueToday === 0 ? t.dashboard.noRevenueToday : t.dashboard.fromPaidInvoices}
                 </p>
               </div>
               <div className="bg-green-100 p-3 rounded-full">
@@ -371,10 +374,10 @@ const Dashboard: React.FC = () => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => navigate('/invoices')}
+                onClick={() => navigate('/app/invoices')}
                 className="w-full"
               >
-                Pogledaj fakture
+                {t.dashboard.viewInvoices}
               </Button>
             </div>
           </CardContent>
@@ -384,12 +387,12 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Fakture na čekanju</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">{t.dashboard.pendingInvoices}</p>
                 <p className="text-3xl font-bold text-gray-900">{pendingInvoices}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {pendingInvoices === 0 ? 'Sve fakture su plaćene' :
-                   pendingInvoices === 1 ? 'faktura čeka plaćanje' :
-                   'faktura čeka plaćanje'}
+                  {pendingInvoices === 0 ? t.dashboard.allInvoicesPaid :
+                   pendingInvoices === 1 ? t.dashboard.invoicePending :
+                   t.dashboard.invoicesPending}
                 </p>
               </div>
               <div className="bg-orange-100 p-3 rounded-full">
@@ -400,10 +403,10 @@ const Dashboard: React.FC = () => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => navigate('/invoices')}
+                onClick={() => navigate('/app/invoices')}
                 className="w-full"
               >
-                Upravljaj fakturama
+                {t.dashboard.viewInvoices}
               </Button>
             </div>
           </CardContent>
@@ -416,8 +419,8 @@ const Dashboard: React.FC = () => {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Prihod (poslednjih 7 dana)</h3>
-                <p className="text-sm text-gray-600">Pregled dnevnog prihoda od plaćenih faktura</p>
+                <h3 className="text-lg font-semibold text-gray-900">{t.dashboard.revenueChart}</h3>
+                <p className="text-sm text-gray-600">{t.dashboard.dailyRevenueOverview}</p>
               </div>
               <div className="bg-blue-100 p-2 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -435,8 +438,8 @@ const Dashboard: React.FC = () => {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Termini (poslednjih 7 dana)</h3>
-                <p className="text-sm text-gray-600">Broj zakazanih termina po danima</p>
+                <h3 className="text-lg font-semibold text-gray-900">{t.dashboard.appointmentsChart}</h3>
+                <p className="text-sm text-gray-600">{t.dashboard.appointmentsByDay}</p>
               </div>
               <div className="bg-teal-100 p-2 rounded-lg">
                 <Calendar className="h-5 w-5 text-teal-600" />
@@ -455,42 +458,42 @@ const Dashboard: React.FC = () => {
       <div className="mt-8">
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Brze akcije</h3>
-            <p className="text-sm text-gray-600">Najčešće korišćene funkcije</p>
+            <h3 className="text-lg font-semibold text-gray-900">{t.dashboard.quickActions}</h3>
+            <p className="text-sm text-gray-600">{t.dashboard.mostUsedFeatures}</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Button
                 variant="outline"
-                onClick={() => navigate('/appointments')}
+                onClick={() => navigate('/app/appointments')}
                 className="flex items-center justify-center gap-2 h-12"
               >
                 <Calendar className="h-5 w-5" />
-                Novi termin
+                {t.dashboard.newAppointment}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate('/clients')}
+                onClick={() => navigate('/app/clients')}
                 className="flex items-center justify-center gap-2 h-12"
               >
                 <Users className="h-5 w-5" />
-                Dodaj klijenta
+                {t.dashboard.addClient}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate('/invoices')}
+                onClick={() => navigate('/app/invoices')}
                 className="flex items-center justify-center gap-2 h-12"
               >
                 <FileText className="h-5 w-5" />
-                Nova faktura
+                {t.dashboard.newInvoice}
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate('/app/settings')}
                 className="flex items-center justify-center gap-2 h-12"
               >
                 <DollarSign className="h-5 w-5" />
-                Dodaj uslugu
+                {t.dashboard.addService}
               </Button>
             </div>
           </CardContent>

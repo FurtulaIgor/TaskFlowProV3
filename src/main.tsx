@@ -7,6 +7,7 @@ import './index.css';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './components/auth/AuthProvider';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { LanguageProvider } from './lib/i18n';
 
 // Create a client with better defaults to prevent infinite loops
 const queryClient = new QueryClient({
@@ -37,14 +38,16 @@ if (!rootElement) throw new Error('Failed to find the root element');
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter {...router}>
-          <AuthProvider>
-            <App />
-            <Toaster position="top-right" richColors />
-          </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter {...router}>
+            <AuthProvider>
+              <App />
+              <Toaster position="top-right" richColors />
+            </AuthProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

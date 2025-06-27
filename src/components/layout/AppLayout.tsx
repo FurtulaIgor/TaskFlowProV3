@@ -5,11 +5,14 @@ import {
   MessageSquare, Settings, Menu, X, LogOut, Shield
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useLanguage } from '../../lib/i18n';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../common/LoadingSpinner';
+import LanguageSelector from '../common/LanguageSelector';
 
 const AppLayout: React.FC = () => {
   const { user, checkRole, signOut, isLoading } = useAuthStore();
+  const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -21,13 +24,13 @@ const AppLayout: React.FC = () => {
   const isAdmin = checkRole('admin');
 
   const navigation = [
-    { name: 'Dashboard', to: '/app', icon: BarChart2 },
-    { name: 'Appointments', to: '/app/appointments', icon: Calendar },
-    { name: 'Clients', to: '/app/clients', icon: Users },
-    { name: 'Invoices', to: '/app/invoices', icon: FileText },
-    { name: 'Messages', to: '/app/messages', icon: MessageSquare },
-    ...(isAdmin ? [{ name: 'Admin', to: '/app/admin', icon: Shield }] : []),
-    { name: 'Settings', to: '/app/settings', icon: Settings }
+    { name: t.nav.dashboard, to: '/app', icon: BarChart2 },
+    { name: t.nav.appointments, to: '/app/appointments', icon: Calendar },
+    { name: t.nav.clients, to: '/app/clients', icon: Users },
+    { name: t.nav.invoices, to: '/app/invoices', icon: FileText },
+    { name: t.nav.messages, to: '/app/messages', icon: MessageSquare },
+    ...(isAdmin ? [{ name: t.nav.admin, to: '/app/admin', icon: Shield }] : []),
+    { name: t.nav.settings, to: '/app/settings', icon: Settings }
   ];
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -79,7 +82,7 @@ const AppLayout: React.FC = () => {
                 onClick={handleSignOut}
               >
                 <LogOut className="mr-1 h-4 w-4" />
-                Sign out
+                {t.common.logout}
               </Button>
             </div>
           </div>
@@ -129,28 +132,38 @@ const AppLayout: React.FC = () => {
               </NavLink>
             ))}
           </nav>
-          <div className="border-t p-4 flex items-center">
-            <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-              {user?.email?.[0]?.toUpperCase() || 'U'}
+          <div className="border-t p-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-base font-medium text-gray-700 truncate">{user?.email}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-1"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-1 h-4 w-4" />
+                  {t.common.logout}
+                </Button>
+              </div>
             </div>
-            <div className="ml-3 flex-1">
-              <p className="text-base font-medium text-gray-700 truncate">{user?.email}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-1"
-                onClick={handleSignOut}
-              >
-                <LogOut className="mr-1 h-4 w-4" />
-                Sign out
-              </Button>
-            </div>
+            <LanguageSelector />
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center md:hidden">
+          <h1 className="text-lg font-semibold text-gray-900">TaskFlowPro</h1>
+          <LanguageSelector />
+        </header>
+        <div className="hidden md:flex justify-end p-4">
+          <LanguageSelector />
+        </div>
         <main className="p-6">
           <Outlet />
         </main>
