@@ -47,6 +47,7 @@ $$;
 
 -- 2. Create is_admin function for specific user
 -- This function checks if a specific user has admin role
+DROP FUNCTION IF EXISTS public.is_admin(uuid);
 CREATE OR REPLACE FUNCTION public.is_admin(user_uuid uuid)
 RETURNS boolean
 LANGUAGE plpgsql
