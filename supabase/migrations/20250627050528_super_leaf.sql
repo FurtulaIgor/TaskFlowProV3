@@ -77,6 +77,7 @@ $$;
 
 -- 4. Create get_all_users_with_roles RPC function for admin panel
 -- This function allows admins to fetch all users with their roles
+DROP FUNCTION IF EXISTS public.get_all_users_with_roles();
 CREATE OR REPLACE FUNCTION public.get_all_users_with_roles()
 RETURNS TABLE (
   id uuid,
