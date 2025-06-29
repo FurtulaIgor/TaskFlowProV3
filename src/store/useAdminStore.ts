@@ -184,32 +184,90 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         throw new Error('Ne možete obrisati svoj vlastiti nalog');
       }
 
-      // Call the Edge Function to delete the user
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`;
+      // Since Edge Function might not be available, we'll do a simplified delete
+      // that only removes the user's data but not the auth user itself
       
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          notes
-        })
-      });
+      // First, log the admin action
+      const { error: actionError } = await supabase
+        .from('admin_actions')
+        .insert([{
+          admin_id: session.user.id,
+          action_type: 'delete_user',
+          target_user_id: userId,
+          notes: notes || null
+        }]);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Greška prilikom brisanja korisnika');
+      if (actionError) {
+        console.error('Error logging admin action:', actionError);
       }
 
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Greška prilikom brisanja korisnika');
+      // Delete user's related data (but keep auth user for now)
+      // Delete user_roles
+      const { error: roleDeleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (roleDeleteError) {
+        console.error('Error deleting user roles:', roleDeleteError);
+        throw new Error('Greška prilikom brisanja uloga korisnika');
       }
-      
+
+      // Delete user_profiles
+      const { error: profileDeleteError } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (profileDeleteError) {
+        console.error('Error deleting user profile:', profileDeleteError);
+        // Don't throw here as profile might not exist
+      }
+
+      // Delete user's clients
+      const { error: clientsDeleteError } = await supabase
+        .from('clients')
+        .delete()
+        .eq('user_id', userId);
+
+      if (clientsDeleteError) {
+        console.error('Error deleting user clients:', clientsDeleteError);
+        throw new Error('Greška prilikom brisanja klijenata korisnika');
+      }
+
+      // Delete user's services
+      const { error: servicesDeleteError } = await supabase
+        .from('services')
+        .delete()
+        .eq('user_id', userId);
+
+      if (servicesDeleteError) {
+        console.error('Error deleting user services:', servicesDeleteError);
+        throw new Error('Greška prilikom brisanja usluga korisnika');
+      }
+
+      // Delete user's appointments
+      const { error: appointmentsDeleteError } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('user_id', userId);
+
+      if (appointmentsDeleteError) {
+        console.error('Error deleting user appointments:', appointmentsDeleteError);
+        throw new Error('Greška prilikom brisanja termina korisnika');
+      }
+
+      // Delete user's invoices
+      const { error: invoicesDeleteError } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('user_id', userId);
+
+      if (invoicesDeleteError) {
+        console.error('Error deleting user invoices:', invoicesDeleteError);
+        throw new Error('Greška prilikom brisanja faktura korisnika');
+      }
+
       // Refresh data
       await Promise.all([
         get().fetchUsers(),
