@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Definišemo tipove za jezike
 export type Language = 'sr' | 'en' | 'fr';
@@ -115,6 +115,7 @@ interface Translations {
       badge: string;
       title: string;
       titleHighlight: string;
+      titleSuffix: string;
       subtitle: string;
       getStarted: string;
       viewDemo: string;
@@ -362,6 +363,7 @@ const translations_sr: Translations = {
       badge: 'Automatizuj svoj biznis danas',
       title: 'Upravljaj svojim',
       titleHighlight: 'poslovanjem',
+      titleSuffix: 'kao profesionalac',
       subtitle: 'TaskFlowPro je kompletno rešenje za male biznise. Automatizuj termine, fakturisanje, komunikaciju sa klijentima i fokusiraj se na ono što najbolje radiš.',
       getStarted: 'Počni besplatno',
       viewDemo: 'Pogledaj demo',
@@ -609,6 +611,7 @@ const translations_en: Translations = {
       badge: 'Automate your business today',
       title: 'Manage your',
       titleHighlight: 'business',
+      titleSuffix: 'like a professional',
       subtitle: 'TaskFlowPro is a complete solution for small businesses. Automate appointments, invoicing, client communication and focus on what you do best.',
       getStarted: 'Get started free',
       viewDemo: 'View demo',
@@ -856,6 +859,7 @@ const translations_fr: Translations = {
       badge: 'Automatisez votre entreprise aujourd\'hui',
       title: 'Gérez votre',
       titleHighlight: 'entreprise',
+      titleSuffix: 'comme un professionnel',
       subtitle: 'TaskFlowPro est une solution complète pour les petites entreprises. Automatisez les rendez-vous, la facturation, la communication client et concentrez-vous sur ce que vous faites de mieux.',
       getStarted: 'Commencer gratuitement',
       viewDemo: 'Voir la démo',

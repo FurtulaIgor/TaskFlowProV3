@@ -207,7 +207,7 @@ const LandingPage: React.FC = () => {
                 <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   {' '}{t.landing.hero.titleHighlight}{' '}
                 </span>
-                kao profesionalac
+                {t.landing.hero.titleSuffix}
               </h1>
               <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
                 {t.landing.hero.subtitle}
