@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw, FileDown, Eye, X } from 'lucide-react';
+import { FileText, Plus, Download, Search, DollarSign, User, Calendar, Receipt, AlertCircle, Edit2, RotateCcw, Eye, X, Trash2 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
-import { useInvoicesStore } from '../store/useInvoicesStore';
+import { useInvoicesStore, Invoice } from '../store/useInvoicesStore';
 import { useClientsStore } from '../store/useClientsStore';
 import { useAppointmentsStore } from '../store/useAppointmentsStore';
 import { useUserProfileStore } from '../store/useUserProfileStore';
@@ -14,7 +14,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const Invoices: React.FC = () => {
-  const { invoices, fetchInvoices, addInvoice, markAsPaid, markAsPending, updateInvoiceStatus, generatePdf, isLoading, error } = useInvoicesStore();
+  const { invoices, fetchInvoices, addInvoice, markAsPaid, markAsPending, updateInvoiceStatus, generatePdf, deleteInvoice, isLoading, error } = useInvoicesStore();
   const { clients, fetchClients } = useClientsStore();
   const { appointments, fetchAppointments } = useAppointmentsStore();
   const { profile, fetchProfile } = useUserProfileStore();
@@ -23,7 +23,9 @@ const Invoices: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [newStatus, setNewStatus] = useState('');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<string | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
@@ -158,7 +160,9 @@ const Invoices: React.FC = () => {
         appointment_id: formData.appointment_id || null,
         amount: parseFloat(formData.amount),
         due_date: formData.due_date,
-        status: 'pending'
+        status: 'pending',
+        paid_date: null,
+        notes: null
       };
       
       const added = await addInvoice(newInvoice);
@@ -168,6 +172,28 @@ const Invoices: React.FC = () => {
       }
     } catch (error) {
       toast.error('Greška prilikom kreiranja fakture');
+    }
+  };
+
+  const handleOpenDeleteModal = (invoice: Invoice) => {
+    setInvoiceToDelete(invoice);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteInvoice = async () => {
+    if (!invoiceToDelete) return;
+
+    try {
+      const success = await deleteInvoice(invoiceToDelete.id);
+      if (success) {
+        toast.success('Faktura je uspešno obrisana');
+        setIsDeleteModalOpen(false);
+        setInvoiceToDelete(null);
+      } else {
+        toast.error('Greška prilikom brisanja fakture');
+      }
+    } catch (error) {
+      toast.error('Neočekivana greška prilikom brisanja fakture');
     }
   };
 
@@ -430,6 +456,15 @@ const Invoices: React.FC = () => {
                             <RotateCcw className="h-4 w-4" />
                           </button>
                         )}
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => handleOpenDeleteModal(invoice)}
+                          className="text-red-600 hover:text-red-900 transition-colors"
+                          title="Obriši fakturu"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -726,6 +761,96 @@ const Invoices: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Obriši fakturu"
+        size="md"
+        footer={
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+              Otkaži
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteInvoice} 
+              loading={isLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Obriši fakturu
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {/* Warning Banner */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-red-800 mb-1">
+                  Upozorenje - Nepovratna akcija
+                </h4>
+                <p className="text-sm text-red-700">
+                  Ova akcija će trajno obrisati fakturu iz sistema. Ova akcija se ne može poništiti!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Invoice Details */}
+          {invoiceToDelete && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-800 mb-2">Faktura koja će biti obrisana:</h4>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex justify-between">
+                  <span>ID fakture:</span>
+                  <span className="font-mono">#{invoiceToDelete.id.substring(0, 8)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Klijent:</span>
+                  <span className="font-medium">{invoiceToDelete.client?.name || 'Nepoznat'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Iznos:</span>
+                  <span className="font-medium">{invoiceToDelete.amount.toFixed(2)} RSD</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Status:</span>
+                  <Badge variant={getStatusBadgeVariant(invoiceToDelete.status)}>
+                    {getStatusDisplayText(invoiceToDelete.status)}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span>Kreirana:</span>
+                  <span>{new Date(invoiceToDelete.created_at).toLocaleDateString('sr-RS')}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirmation Text */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">Posledice brisanja:</h4>
+            <ul className="text-sm text-yellow-700 space-y-1">
+              <li>• Faktura će biti trajno uklonjena iz sistema</li>
+              <li>• Povezane PDF fakture će biti obrisane</li>
+              <li>• Izveštaji neće više uključivati ovu fakturu</li>
+              <li>• Ova akcija se ne može poništiti</li>
+            </ul>
+          </div>
+
+          {/* Final Confirmation */}
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Da li ste sigurni da želite da obrišete ovu fakturu?
+            </p>
           </div>
         </div>
       </Modal>
