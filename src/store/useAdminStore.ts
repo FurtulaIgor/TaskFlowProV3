@@ -56,7 +56,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         role: item.role,
         created_at: item.created_at,
         user: {
-          email: item.email
+          email: item.email && item.email !== 'placeholder@email.com' ? item.email : 'User-' + item.user_id.substring(0, 8)
         }
       }));
       

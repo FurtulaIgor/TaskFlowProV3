@@ -32,11 +32,8 @@ export default function Login() {
         // Navigate to app dashboard
         navigate('/app', { replace: true });
         
-        // Invalidate queries after navigation to ensure fresh data
-        // Use setTimeout to allow session to fully establish
-        setTimeout(() => {
-          queryClient.invalidateQueries();
-        }, 100);
+        // Invalidate queries immediately after navigation to ensure fresh data
+        queryClient.invalidateQueries();
       } else {
         toast.error(t.auth.invalidCredentials);
       }
