@@ -11,7 +11,7 @@ import { LoadingSpinner } from '../common/LoadingSpinner';
 import LanguageSelector from '../common/LanguageSelector';
 
 const AppLayout: React.FC = () => {
-  const { user, checkRole, signOut, isLoading } = useAuthStore();
+  const { user, checkRole, signOut, isLoading, roles } = useAuthStore();
   const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -22,6 +22,8 @@ const AppLayout: React.FC = () => {
   };
 
   const isAdmin = checkRole('admin');
+  console.log('Current user roles:', roles); // Debug log
+  console.log('Is admin?', isAdmin); // Debug log
 
   const navigation = [
     { name: t.nav.dashboard, to: '/app', icon: BarChart2 },

@@ -11,7 +11,7 @@ interface AdminRouteProps {
 
 export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const location = useLocation();
-  const { getSession, isInitialized, initialize, getUserRoles } = useAuthStore();
+  const { getSession, isInitialized, initialize, getUserRoles, roles, checkRole } = useAuthStore();
   const queryClient = useQueryClient();
   
   // Initialize auth state if not already initialized
@@ -52,11 +52,14 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   }
   
   // Check if user has admin role
-  const isAdmin = userRoles?.includes('admin') || false;
+  const isAdmin = checkRole('admin');
+  console.log('AdminRoute - userRoles:', userRoles); // Debug log
+  console.log('AdminRoute - store roles:', roles); // Debug log
+  console.log('AdminRoute - isAdmin:', isAdmin); // Debug log
   
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
-}; 
+};

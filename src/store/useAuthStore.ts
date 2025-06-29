@@ -39,6 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (session) {
         // Fetch user roles from database
         const roles = await get().getUserRoles(session.user.id);
+        console.log('Fetched roles during initialize:', roles); // Debug log
         set({ 
           user: session.user, 
           session, 
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
     } catch (error: any) {
+      console.error('Error in initialize:', error);
       set({ 
         user: null, 
         session: null, 
@@ -75,6 +77,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Fetch user roles from database
       const roles = await get().getUserRoles(data.user.id);
+      console.log('Fetched roles after signIn:', roles); // Debug log
       
       // Create default user role if none exists
       if (roles.length === 0) {
@@ -97,6 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       return data.user;
     } catch (error: any) {
+      console.error('Error in signIn:', error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -137,6 +141,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       return data.user;
     } catch (error: any) {
+      console.error('Error in signUp:', error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -155,6 +160,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false 
       });
     } catch (error: any) {
+      console.error('Error in signOut:', error);
       set({ error: error.message, isLoading: false });
     }
   },
@@ -167,6 +173,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ isLoading: false });
     } catch (error: any) {
+      console.error('Error in resetPassword:', error);
       set({ error: error.message, isLoading: false });
     }
   },
@@ -179,6 +186,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ isLoading: false });
     } catch (error: any) {
+      console.error('Error in updatePassword:', error);
       set({ error: error.message, isLoading: false });
     }
   },
@@ -193,6 +201,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const currentState = get();
         if (!currentState.user || currentState.user.id !== session.user.id) {
           const roles = await get().getUserRoles(session.user.id);
+          console.log('Fetched roles in getSession:', roles); // Debug log
           set({ 
             user: session.user, 
             session, 
@@ -215,6 +224,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return null;
       }
     } catch (error: any) {
+      console.error('Error in getSession:', error);
       set({ error: error.message });
       return null;
     }
@@ -222,6 +232,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   getUserRoles: async (userId: string) => {
     try {
+      console.log('Fetching roles for user:', userId); // Debug log
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -232,7 +243,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return [];
       }
       
-      return data?.map(item => item.role) || [];
+      const roles = data?.map(item => item.role) || [];
+      console.log('Fetched roles:', roles); // Debug log
+      return roles;
     } catch (error) {
       console.error('Error in getUserRoles:', error);
       return [];
@@ -241,6 +254,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   checkRole: (role: string) => {
     const { roles } = get();
+    console.log('Checking role:', role, 'Available roles:', roles); // Debug log
     return roles.includes(role);
   }
 }));
