@@ -22,13 +22,6 @@ import {
 import { Button } from '../components/ui/Button';
 import { useLanguage } from '../lib/i18n';
 import LanguageSelector from '../components/common/LanguageSelector';
-import Badge from '../components/ui/Badge';
-
-// Example usage
-<Badge variant="info">New</Badge>
-<Badge variant="success" size="sm">Completed</Badge>
-<Badge variant="warning" size="lg">Pending</Badge>
-
 
 const LandingPage: React.FC = () => {
   const { t } = useLanguage();
