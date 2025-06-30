@@ -22,6 +22,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { useLanguage } from '../lib/i18n';
 import LanguageSelector from '../components/common/LanguageSelector';
+import Badge from '../components/ui/Badge';
 
 const LandingPage: React.FC = () => {
   const { t } = useLanguage();
@@ -94,6 +95,19 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Built on Bolt Badge */}
+      <div className="fixed top-4 right-4 z-50">
+        <a 
+          href="https://bolt.new" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-full hover:bg-indigo-700 transition-colors shadow-md"
+        >
+          <span>Built on</span>
+          <span className="font-bold">Bolt</span>
+        </a>
+      </div>
+
       {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
