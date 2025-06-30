@@ -96,7 +96,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Built on Bolt Badge */}
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-[999]">
         <a 
           href="https://bolt.new" 
           target="_blank" 
