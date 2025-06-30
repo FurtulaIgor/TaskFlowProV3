@@ -95,19 +95,6 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Built on Bolt Badge */}
-      <div className="fixed top-4 right-4 z-[999]">
-        <a 
-          href="https://bolt.new" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-full hover:bg-indigo-700 transition-colors shadow-md"
-        >
-          <span>Built on</span>
-          <span className="font-bold">Bolt</span>
-        </a>
-      </div>
-
       {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -119,6 +106,17 @@ const LandingPage: React.FC = () => {
               <span className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 TaskFlowPro
               </span>
+              
+              {/* Built on Bolt Badge - Repositioned here */}
+              <a 
+                href="https://bolt.new" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="ml-4 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-full hover:bg-indigo-700 transition-colors shadow-md"
+              >
+                <span>Built on</span>
+                <span className="font-bold">Bolt</span>
+              </a>
             </div>
             
             {/* Desktop Navigation */}
